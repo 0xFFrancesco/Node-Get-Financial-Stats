@@ -1,0 +1,23 @@
+{
+	"name": "get-financial",
+	"version": "1.0.0",
+	"description": "Get financial data from Google Finance and combine the into an easily readable image.",
+	"main": "get-financial.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"keywords": [
+		"node",
+		"nodejs",
+		"stocks",
+		"finance",
+		"getfinancials"
+	],
+	"author": "Rizzi Francesco",
+	"website": "https://frarizzi.science",
+	"license": "ISC",
+	"dependencies": {
+		"npm": "^6.2.0",
+		"puppeteer": "^1.6.0"
+	}
+}
