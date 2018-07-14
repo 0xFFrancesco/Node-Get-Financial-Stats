@@ -5,10 +5,12 @@ module.exports = {
 	tickers                     : [ 'ticker 1', 'ticker 2', 'ticker n' ],
 	
 	//optional
-	endpoint: "https://www.google.com/search?stick=H4sIAAAAAAAAAOPQeMSozC3w8sc9YSmpSWtOXmMU4RJyy8xLzEtO9UnMS8nMSw9ITE_lAQCCiJIYKAAAAA&q=finance&tbm=fin",
-	search_field_selector: '#lst-ib',
-	search_submit_selector: '[name="btnG"]',
-	summary_id: 'knowledge-finance-wholepage__entity-summary',
+	endpoint               : "https://www.google.com/search?stick=H4sIAAAAAAAAAOPQeMSozC3w8sc9YSmpSWtOXmMU4RJyy8xLzEtO9UnMS8nMSw9ITE_lAQCCiJIYKAAAAA&q=finance&tbm=fin",
+	search_field_selector  : '#lst-ib',
+	search_form_selector   : '[name="f"]',
+	search_submit_selector : '[name="btnG"]',
+	chart_selector         : '#knowledge-finance-wholepage__entity-summary > div > div > g-card-section',
+	summary_selector       : '#knowledge-finance-wholepage__entity-summary > div > div > g-card-section:nth-child(2)',
 	
 	p_e_ratio_warnings_strategy : function( p_e ){
 		switch ( 1 ) {
