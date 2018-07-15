@@ -1,5 +1,5 @@
 {
-	"name": "get-financial",
+	"name": "get-financial-stats",
 	"version": "1.0.0",
 	"description": "Get financial data from Google Finance and combine the into an easily readable image.",
 	"main": "get-financial.js",
