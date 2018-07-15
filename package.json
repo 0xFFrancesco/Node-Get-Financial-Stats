@@ -1,7 +1,7 @@
 {
 	"name": "get-financial-stats",
 	"version": "1.0.0",
-	"description": "Get financial data from Google Finance and combine the into an easily readable image.",
+	"description": "Get financial data from Google Finance and combine it into an easily readable HTML page.",
 	"main": "get-financial.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
