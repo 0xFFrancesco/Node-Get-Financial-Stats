@@ -4,7 +4,7 @@
 const fs        = require('fs-extra');
 const puppeteer = require('puppeteer');
 
-const timeRanges = [ '1Y', '5Y', '40Y' ];
+const timeRanges = [ '1Y', /*'5Y', '40Y'*/ ];
 let output       = "";
 
 //
@@ -12,10 +12,10 @@ let output       = "";
 //
 async function saveSingleImage( element, imageName, config, logger ){
 	
-	const dest          = config.save_to_dir + config.assets_dir_name;
+	const dest          = config.save_to_dir + config.assets_dir_name + '/';
 	const imageFullPath = dest + imageName + '.jpg';
 	
-	logger(`Saving file: ${imageFullPath}...`);
+	logger(`📸 Saving file: ${imageFullPath}...`);
 	
 	if ( !fs.existsSync(dest) ) {
 		fs.mkdirSync(dest);
@@ -41,6 +41,7 @@ async function changeTimeRange( page, timeRange ){
 async function takeImages( page, ticker, config, logger ){
 	
 	await takeDOMElementImage(config.summary_selector, ticker + 'summary');
+	await takeDOMElementImage(config.financial_selector, ticker + 'financial');
 	
 	for ( let timeRange of timeRanges ) {
 		
@@ -58,12 +59,12 @@ async function takeImages( page, ticker, config, logger ){
 
 async function convertToHTMLOutput( page, ticker, config, logger ){
 	
-	logger(`Creating HTML for ${ticker}...`);
+	logger(`🤖 Creating HTML for ${ticker}...`);
 	
 	let tickerTemplate = fs.readFileSync('./templates/ticker-template.html', 'utf8');
 	
-	const tickerFullName = await extractFieldValue('div[role="heading"] > div:nth-child(3)');
-	const pe             = await extractFieldValue(config.summary_selector + ' table tr:nth-child(5) td:nth-child(2)');
+	const tickerFullName = await extractFieldValue(page, 'div[role="heading"] > div:nth-child(2)');
+	const pe             = parseFloat(await extractFieldValue(page, config.summary_selector + ' table tr:nth-child(5) td:nth-child(2)'));
 	
 	const peData = config.p_e_ratio_warnings_strategy(pe);
 	
@@ -81,9 +82,9 @@ async function convertToHTMLOutput( page, ticker, config, logger ){
 		image = `<img src="./${config.assets_dir_name}/${ticker}${timeRange}.jpg">`;
 		historyHTML += image;
 		
-		tickerTemplate = tickerTemplate.replace('{{{ticker-price-images}}}', historyHTML);
-		
 	});
+	
+	tickerTemplate = tickerTemplate.replace('{{{ticker-price-images}}}', historyHTML);
 	
 	image          = `<img src="./${config.assets_dir_name}/${ticker}financial.jpg">`;
 	tickerTemplate = tickerTemplate.replace('{{{ticker-financial}}}', image);
@@ -97,7 +98,7 @@ async function convertToHTMLOutput( page, ticker, config, logger ){
 
 async function extractFieldValue( page, selector ){
 	
-	await page.evaluate(( selector ) =>{
+	return await page.evaluate(( selector ) =>{
 		
 		const DOMElement = document.querySelector(selector);
 		return DOMElement.innerText;
@@ -106,9 +107,9 @@ async function extractFieldValue( page, selector ){
 	
 }
 
-function deleteOldFiles( config ){
+function deleteOldFiles( config, logger ){
 	
-	logger(`Removing old files...`);
+	logger(`🌀 Removing old files...`);
 	fs.removeSync(config.save_to_dir + config.file_name);
 	fs.removeSync(config.save_to_dir + config.assets_dir_name);
 	
@@ -116,10 +117,10 @@ function deleteOldFiles( config ){
 
 function copyAssets( config, logger ){
 	
-	logger(`Copying assets files...`);
+	logger(`🤖 Copying assets files...`);
 	
 	const from = './templates/';
-	const to   = config.save_to_dir + config.assets_dir_name;
+	const to   = config.save_to_dir + config.assets_dir_name + '/';
 	
 	[ 'base.css', 'reset.css', 'grid.css' ].forEach(file =>{
 		
@@ -131,7 +132,7 @@ function copyAssets( config, logger ){
 
 function createFinalHTMLPage( config, logger ){
 	
-	logger(`Creating final HTML page...`);
+	logger(`🤖 Creating final HTML page...`);
 	
 	let finalPage = fs.readFileSync('./templates/base.html', 'utf8');
 	
@@ -169,7 +170,7 @@ async function process( config, browser, logger ){
 	
 	for ( let ticker of config.tickers ) {
 		
-		logger(`Processing ${ticker}...`);
+		logger(`🤖 Processing ${ticker}...`);
 		
 		await navigateToTicker(page, ticker, config);
 		await takeImages(page, ticker, config, logger);
@@ -184,19 +185,21 @@ async function process( config, browser, logger ){
 
 async function execute( config, logger ){
 	
-	logger('Starting...');
+	logger('⚡️ Starting...');
 	
-	const browser = await puppeteer.launch({headless : false});
+	const browser = await puppeteer.launch();
 	
 	await process(config, browser, logger).then(() =>{
-		logger('Task completed!');
+		logger('🌈 Task completed!');
 	}).catch(( err ) =>{
-		logger('An error occurred: ' + err);
+		logger('🔥 An error occurred: ' + err);
+		logger('🌀 Removing files...');
+		deleteOldFiles(config, logger);
 	});
 	
-	logger('Unloading resources...');
+	logger('🌀 Unloading resources...');
 	await browser.close();
-	logger('Finished!');
+	logger('👍 Finished!');
 	
 }
 

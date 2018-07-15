@@ -16,8 +16,10 @@ module.exports = {
 	search_submit_selector : '[name="btnG"]',
 	chart_selector         : '#knowledge-finance-wholepage__entity-summary > div > div > g-card-section',
 	summary_selector       : '#knowledge-finance-wholepage__entity-summary > div > div > g-card-section:nth-child(2)',
+	financial_selector     : '.knowledge-finance-wholepage__section div.mod',
 	
 	p_e_ratio_warnings_strategy : function( p_e ){
+		
 		switch ( 1 ) {
 			case p_e < 5:
 				return {

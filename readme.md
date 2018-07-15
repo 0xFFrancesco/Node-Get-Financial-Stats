@@ -9,6 +9,8 @@ Then combines those information to create an easy digestible HTML file which at 
 
 It also marks the tickers with the colours and labels set in a strategy function evaluating the P/E ratio. 💸
 
+As a **bonus** it will output a fine selection of Emoji in the terminal log.
+
 ### Usage:
 - Copy `config-template.js` to a new file called `config.js`;
 - Edit the file `config.js` to match your preferences;
@@ -18,6 +20,12 @@ It also marks the tickers with the colours and labels set in a strategy function
     - It will create the HTML page in the current directory;
 - Open the just created HTML page to consult your precious data. 🙌
 
+### About:
+[About the author.](https://frarizzi.science/about)
+
 ### Requirements:
  - NodeJS 🦏
  - NPM 📦
+
+### Terminal expected output for \[`APPL`, `GOOG`, `JNJ`\]:
+![Terminal Output](assets/terminal-output.png?raw=true "Terminal Output")
