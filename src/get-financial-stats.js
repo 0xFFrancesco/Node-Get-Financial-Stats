@@ -4,6 +4,9 @@
 const fs        = require('fs');
 const puppeteer = require('puppeteer');
 
+const timeRanges = [ '1Y', '5Y', '40Y' ];
+const output     = "";
+
 //
 //FUNCTIONS
 //
@@ -30,8 +33,6 @@ async function changeTimeRange( page, timeRange ){
 
 async function takeImages( page, ticker, config, logger ){
 	
-	const timeRanges = [ '1Y',/* '5Y', '40Y' */];
-	
 	await takeDOMElementImage(config.summary_selector, ticker + 'summary');
 	
 	for ( let timeRange of timeRanges ) {
@@ -48,15 +49,30 @@ async function takeImages( page, ticker, config, logger ){
 	
 }
 
-async function combineTickerImages( ticker, logger ){
+function convertToHTMLOutput( ticker, logger ){
 	
-	logger(`Combining ${ticker} images...`);
+	logger(`Creating HTML for ${ticker}...`);
 	
 }
 
-async function combineAllImagesToFinal( logger ){
+function deleteOldFiles( config ){
 	
-	logger(`Creating final image...`);
+	logger(`Removing old files...`);
+	fs.unlinkSync(config.save_to_dir + config.file_name);
+	fs.unlinkSync(config.save_to_dir + config.assets_dir_name);
+	
+}
+
+function createFinalHTMLPage( config, logger ){
+	
+	logger(`Creating final HTML page...`);
+	
+	let finalPage = fs.readFileSync('./templates/base.html');
+	
+	finalPage.replace('{{{assets_dir}}}', config.assets_dir_name);
+	finalPage.replace('{{{data}}}', output);
+	
+	fs.writeFileSync(config.save_to_dir + config.file_name, finalPage);
 	
 }
 
@@ -89,11 +105,12 @@ async function process( config, browser, logger ){
 		
 		await navigateToTicker(page, ticker, config);
 		await takeImages(page, ticker, config, logger);
-		await combineTickerImages(ticker, logger);
+		convertToHTMLOutput(ticker, config, logger);
 		
 	}
 	
-	await combineAllImagesToFinal(logger);
+	deleteOldFiles(config, logger);
+	createFinalHTMLPage(config, logger);
 	
 }
 

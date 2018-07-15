@@ -1,10 +1,15 @@
 module.exports = {
 	
-	//must edit
-	save_to_dir                 : 'path to save the image to',
-	tickers                     : [ 'ticker 1', 'ticker 2', 'ticker n' ],
+	//
+	//MUST EDIT
+	//
+	save_to_dir : 'path to save the image to',
+	tickers     : [ 'ticker 1', 'ticker 2', 'ticker n' ],
 	
-	//optional
+	//
+	//OPTIONAL
+	//
+	assets_dir_name        : 'node_get_financial_stats_assets',
 	endpoint               : "https://www.google.com/search?stick=H4sIAAAAAAAAAOPQeMSozC3w8sc9YSmpSWtOXmMU4RJyy8xLzEtO9UnMS8nMSw9ITE_lAQCCiJIYKAAAAA&q=finance&tbm=fin",
 	search_field_selector  : '#lst-ib',
 	search_form_selector   : '[name="f"]',
