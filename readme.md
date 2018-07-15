@@ -2,6 +2,8 @@
 
 ## It gets the financial data of a predefined list of financial instruments scraping the Google Finance website. Then combines the gathered data into an easily readable HTLM page.
 
+![Node GFS](assets/logo.png?raw=true "Node GFS")
+
 ### What does it do?
 It automatically scrapes the Google Finance website to capture different screenshots and data of a user-defined list of financial instruments.
 

@@ -1,17 +1,22 @@
 <div class="ticker">
 	
-	<div class="ticker-header">
-		<span class="ticker-full-name">{{{ticker-name}}}</span> {{{ticker-full-name}}}
-		<span class="ticker-badge" style="background-color: {{{pe-color}}};">{{{pe-label}}}</span></div>
-	</div>
+	<h3 class="ticker-header">
+		<span class="ticker-name">{{{ticker-name}}}</span>
+		<span class="ticker-full-name">{{{ticker-full-name}}}</span>
+		<span class="ticker-badge" style="background-color: {{{pe-color}}}; border-color: {{{pe-color}}}">{{{pe-label}}}</span>
+	</h3>
 	
 	<div class="ticker-price-history">
-		{{{ticker-price-images}}}
+		<div class="row">
+			{{{ticker-price-images}}}
+		</div>
 	</div>
 	
 	<div class="ticker-other-info">
-		{{{ticker-summary}}}
-		{{{ticker-financial}}}
+		<div class="row">
+			{{{ticker-financial}}}
+			{{{ticker-summary}}}
+		</div>
 	</div>
-	
+
 </div>

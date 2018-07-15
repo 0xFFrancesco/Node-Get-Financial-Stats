@@ -4,7 +4,7 @@
 const fs        = require('fs-extra');
 const puppeteer = require('puppeteer');
 
-const timeRanges = [ '1Y', /*'5Y', '40Y'*/ ];
+const timeRanges = [ '1Y', '5Y', '40Y' ];
 let output       = "";
 
 //
@@ -71,7 +71,7 @@ async function convertToHTMLOutput( page, ticker, config, logger ){
 	tickerTemplate = tickerTemplate.replace('{{{ticker-name}}}', ticker);
 	tickerTemplate = tickerTemplate.replace('{{{ticker-full-name}}}', tickerFullName);
 	
-	tickerTemplate = tickerTemplate.replace('{{{pe-color}}}', peData.color);
+	tickerTemplate = tickerTemplate.replace(/{{{pe-color}}}/g, peData.color);
 	tickerTemplate = tickerTemplate.replace('{{{pe-label}}}', peData.label);
 	
 	let historyHTML = "";
@@ -79,20 +79,40 @@ async function convertToHTMLOutput( page, ticker, config, logger ){
 	
 	timeRanges.forEach(timeRange =>{
 		
-		image = `<img src="./${config.assets_dir_name}/${ticker}${timeRange}.jpg">`;
+		image = `<div class="col-xs-12 col-lg-4"><div class="ticker-time-range">${timeRangeToDisplayValue(timeRange)}</div><img src="./${config.assets_dir_name}/${ticker}${timeRange}.jpg"></div>`;
 		historyHTML += image;
 		
 	});
 	
 	tickerTemplate = tickerTemplate.replace('{{{ticker-price-images}}}', historyHTML);
 	
-	image          = `<img src="./${config.assets_dir_name}/${ticker}financial.jpg">`;
+	image          = `<div class="col-xs-12 col-lg-6"><img src="./${config.assets_dir_name}/${ticker}financial.jpg"></div>`;
 	tickerTemplate = tickerTemplate.replace('{{{ticker-financial}}}', image);
 	
-	image          = `<img src="./${config.assets_dir_name}/${ticker}summary.jpg">`;
+	image          = `<div class="col-xs-12 col-lg-6"><img src="./${config.assets_dir_name}/${ticker}summary.jpg"></div>`;
 	tickerTemplate = tickerTemplate.replace('{{{ticker-summary}}}', image);
 	
 	output += tickerTemplate;
+	
+}
+
+function timeRangeToDisplayValue( timeRange ){
+	
+	switch ( timeRange ) {
+		
+		case "1Y":
+			return '1 Year';
+		
+		case "5Y":
+			return '5 Years';
+		
+		case "40Y":
+			return 'Max';
+		
+		default:
+			return "";
+		
+	}
 	
 }
 
@@ -122,7 +142,7 @@ function copyAssets( config, logger ){
 	const from = './templates/';
 	const to   = config.save_to_dir + config.assets_dir_name + '/';
 	
-	[ 'base.css', 'reset.css', 'grid.css' ].forEach(file =>{
+	[ 'styles.css', 'reset.css', 'grid.css', 'favicon.ico' ].forEach(file =>{
 		
 		fs.copyFileSync(from + file, to + file);
 		
@@ -136,7 +156,7 @@ function createFinalHTMLPage( config, logger ){
 	
 	let finalPage = fs.readFileSync('./templates/base.html', 'utf8');
 	
-	finalPage = finalPage.replace('{{{assets_dir}}}', config.assets_dir_name);
+	finalPage = finalPage.replace(/{{{assets_dir}}}/g, config.assets_dir_name);
 	finalPage = finalPage.replace('{{{data}}}', output);
 	
 	fs.writeFileSync(config.save_to_dir + config.file_name, finalPage);

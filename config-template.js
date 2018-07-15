@@ -9,14 +9,15 @@ module.exports = {
 	//
 	//OPTIONAL
 	//
-	assets_dir_name        : 'node_get_financial_stats_assets',
+	assets_dir_name        : 'financial_stats_assets',
+	file_name              : 'financial_stats.html',
 	endpoint               : "https://www.google.com/search?stick=H4sIAAAAAAAAAOPQeMSozC3w8sc9YSmpSWtOXmMU4RJyy8xLzEtO9UnMS8nMSw9ITE_lAQCCiJIYKAAAAA&q=finance&tbm=fin",
 	search_field_selector  : '#lst-ib',
 	search_form_selector   : '[name="f"]',
 	search_submit_selector : '[name="btnG"]',
-	chart_selector         : '#knowledge-finance-wholepage__entity-summary > div > div > g-card-section',
+	chart_selector         : '#knowledge-finance-wholepage__entity-summary > div > div > g-card-section [data-async-type="finance_wholepage_chart"] > div > div',
 	summary_selector       : '#knowledge-finance-wholepage__entity-summary > div > div > g-card-section:nth-child(2)',
-	financial_selector     : '.knowledge-finance-wholepage__section div.mod',
+	financial_selector     : '.knowledge-finance-wholepage__section:nth-child(2) div.mod',
 	
 	p_e_ratio_warnings_strategy : function( p_e ){
 		
