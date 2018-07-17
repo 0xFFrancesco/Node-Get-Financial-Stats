@@ -4,6 +4,10 @@
 
 ![Node GFS](assets/logo.png?raw=true "Node GFS")
 
+### The problem:
+
+
+
 ### What does it do?
 It automatically scrapes the Google Finance website to capture different screenshots and data of a user-defined list of financial instruments.
 
@@ -19,7 +23,7 @@ As a **bonus** it will output a fine selection of Emoji in the terminal log.
 - Install dependencies: `npm i`;
 - Run the program: `node program.js`;
     - It will create a new sub-directory with all the assets;
-    - It will create the HTML page in the current directory;
+    - It will create the HTML page in the defined output directory;
 - Open the just created HTML page to consult your precious data. 🙌
 
 ### About:
@@ -28,6 +32,8 @@ As a **bonus** it will output a fine selection of Emoji in the terminal log.
 ### Requirements:
  - NodeJS 🦏
  - NPM 📦
+
+### Generated HTML page expected output for \[`APPL`, `GOOG`, `JNJ`\]:
 
 ### Terminal expected output for \[`APPL`, `GOOG`, `JNJ`\]:
 ![Terminal Output](assets/terminal-output.png?raw=true "Terminal Output")

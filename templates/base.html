@@ -11,7 +11,7 @@
 		<title>Node Get Financial Stats 🌏📈</title>
 		
 		<meta name="author" content="Francesco Rizzi">
-		<meta name="website" content="https://frarizzi.science">
+		<meta name="website" content="https://frarizzi.science/about">
 		<meta name="description" content="It gets the financial data of a predefined list of financial instruments scraping the Google Finance website. Then combines the gathered data into an easily readable HTLM page.">
 		
 		<link rel="shortcut icon" href="./{{{assets_dir}}}/favicon.ico" type="image/x-icon">
@@ -19,7 +19,6 @@
 		
 		<link href="https://fonts.googleapis.com/css?family=Roboto:400,500" rel="stylesheet">
 		<link rel="stylesheet" href="./{{{assets_dir}}}/reset.css" type="text/css">
-		<link rel="stylesheet" href="./{{{assets_dir}}}/grid.css" type="text/css">
 		<link rel="stylesheet" href="./{{{assets_dir}}}/styles.css" type="text/css">
 		
 	</head>
@@ -30,21 +29,25 @@
 		
 			<div class="row">
 				
-				<div class="col-xs-12">
+				<div class="col-sm-12">
 					
 					<h1>Node Get Financial Stats 🌏📈</h1>
 					<h2><a href="https://frarizzi.science" target="_blank">Author</a> - <a href="https://github.com/Francesco-Rizzi/Node-Get-Financial-Stats" target="_blank">GitHub</a></h2>
-					
-					<!--start automated data insertion-->
-					
-					{{{data}}}
-					
-					<!--end automated data insertion-->
 					
 				</div>
 				
 			</div>
 		
+		</div>
+		
+		<div class="grid-container">
+			
+			<!--start automated data insertion-->
+			
+			{{{data}}}
+			
+			<!--end automated data insertion-->
+			
 		</div>
 		
 	</body>
