@@ -1,6 +1,6 @@
 # Node Get Financial Stats 🌏📈
 
-## Gather, aggregate and combine charts and data of different financial products in a easy digestible well-designed web page displaying multiple products at once.
+## Gather, aggregate and combine charts and data of different financial products into an easy digestible well-designed web page displaying multiple products at once.
 
 ![Node GFS logo](assets/logo.png?raw=true "Node GFS")
 
