@@ -57,4 +57,4 @@ It also enhance the data marking the Tickers with colours and labels defined in 
 As a **big bonus** it will output a fine selection of Emoji in the terminal log.
 
 ### Sample terminal output expected for Tickers \[`APPL`, `GOOG`, `JNJ`\]:
-![Terminal Output](assets/terminal-output.png?raw=true "Terminal Output")
+![Terminal Output](assets/terminal-output-2.png?raw=true "Terminal Output")
