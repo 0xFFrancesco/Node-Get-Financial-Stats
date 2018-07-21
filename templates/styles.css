@@ -26,12 +26,18 @@ h3 {
 	font-weight: 300;
 }
 
-body {
-	padding-bottom: 100px;
+.header {
+	padding: 15px;
+	max-width: 1024px;
+	margin: 0 auto;
 }
 
 .grid-container {
-	grid-template-columns: repeat(auto-fit, minmax(345px, 1fr));
+	display: grid;
+	grid-gap: 15px;
+	padding: 0 15px 15px;
+	grid-template-columns: repeat(auto-fit, minmax(800px, 1fr));
+	margin-top: 60px;
 }
 
 .ticker {
@@ -41,11 +47,11 @@ body {
 	padding: 15px;
 	width: 100%;
 	max-width: 1000px;
-	margin: 60px auto 0;
+	margin: 0 auto;
 }
 
 .ticker-header {
-	margin: 60px 0 30px 0;
+	margin: 15px 0 45px 0;
 	display: flex;
 	align-items: center;
 }
@@ -99,8 +105,30 @@ body {
 	max-width: 100%;
 }
 
-.ticker-other-info {
+.ticker-info {
 	margin-top: 30px;
+	display: flex;
+}
+
+.ticker-info-part {
+	width: 50%;
+}
+
+.ticker-info-part table {
+	width: 100%;
+}
+
+.ticker-info-part td {
+	width: 25%;
+}
+
+.ticker-info tr:not(:last-child) td {
+	padding-bottom: 15px;
+}
+
+.ticker-info-part td:first-child {
+	font-weight: 700;
+
 }
 
 .ticker-time-range {
@@ -124,6 +152,15 @@ body {
 
 .ticker-chart {
 	width: calc(33.333% - 10px);
+}
+
+.ticker-info-part-diff{
+	color: #A6A6A6;
+}
+
+.ticker-info-part-with-diff{
+	display: inline-block;
+	width: 75px;
 }
 
 /*
@@ -159,6 +196,30 @@ body {
 
 .knowledge-finance-wholepage-chart__xt span {
 	color: white;
+	display: none;
+	visibility: visible !important;
+}
+
+.knowledge-finance-wholepage-chart__xt span:first-child {
+	display: initial;
+	position: absolute;
+	left: 10px !important;
+	transform: none !important;
+}
+
+.knowledge-finance-wholepage-chart__xt {
+	width: 100%;
+}
+
+.knowledge-finance-wholepage-chart__xt span:last-of-type {
+	display: initial;
+	position: absolute;
+	right: 0;
+	left: initial !important;
+}
+
+.knowledge-finance-wholepage-chart__xtg {
+	display: none;
 }
 
 .knowledge-finance-wholepage-chart__xt {
@@ -173,8 +234,4 @@ body {
 	fill: white;
 	stroke: none;
 	background: #333333;
-}
-
-@media screen and (max-width: 300px) {
-
 }

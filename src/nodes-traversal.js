@@ -1,4 +1,4 @@
-async function injectJQuery( page ){
+async function injectJQuery( page, config ){
 	
 	await page.evaluate(() =>{
 		
@@ -16,7 +16,7 @@ async function injectJQuery( page ){
 		
 	});
 	
-	await page.waitFor(2500);
+	await page.waitFor(config.injectJqueryWaitTime);
 	
 }
 
@@ -31,7 +31,7 @@ async function exposeGetters( page ){
 			}
 			
 			string = typeof string === "string" ? string : string + '';
-			return +(+(string.replace(',', '.'))).toFixed(2);
+			return +(+((string.replace(',', '')).replace(',', '.'))).toFixed(2);
 		};
 		
 		window.readInnerText = function readInnerText( $obj ){
@@ -40,26 +40,49 @@ async function exposeGetters( page ){
 			
 		};
 		
+		window.formatYearlyDiff = function( val, isUp ){
+			
+			if ( isUp ) {
+				return "+" + val;
+			}
+			return "-" + val;
+			
+		};
+		
+		window.evaluateAndFormatYearlyDiff = function( $obj ){
+			
+			if ( !$obj[ 0 ] || $obj[ 0 ].innerText === '-' ) {
+				return "-";
+			}
+			
+			let isUp = $obj[ 0 ].attributes[ 'aria-label' ].value.startsWith('Up');
+			return formatYearlyDiff(readInnerText($obj), isUp);
+			
+		};
+		
 		window.getters = {
 			
 			//
 			//RETURN VALUES
 			//
-			P_E                    : () => toNumber(readInnerText($("td:contains('P/E ratio')").next())),
+			P_E                    : () =>{
+				const res = toNumber(readInnerText($("td:contains('P/E ratio')").next()));
+				return res === 0 ? '-' : res;
+			},
 			PRICE                  : () => toNumber(readInnerText($("span:contains('USD')").prev())),
 			FULL_NAME              : () => readInnerText($('[role="heading"] > div').next()),
 			CAP                    : () => readInnerText($("td:contains('Mkt cap')").next()),
 			DIV_YELD               : () => readInnerText($("td:contains('Div yield')").next()),
 			Y_FLUCTUANTION_VAL     : () => toNumber(toNumber(readInnerText($("td:contains('52-wk high')").next())) - toNumber(readInnerText($("td:contains('52-wk low')").next()))),
-			Y_FLUCTUANTION_PER     : () => toNumber(100 - toNumber(readInnerText($("td:contains('52-wk low')").next())) / toNumber(readInnerText($("td:contains('52-wk high')").next())) * 100),
+			Y_FLUCTUANTION_PER     : () => toNumber((toNumber(readInnerText($("td:contains('52-wk high')").next())) - toNumber(readInnerText($("td:contains('52-wk low')").next()))) / window.getters.PRICE() * 100),
 			EPS                    : () => readInnerText($("td:contains('Diluted EPS')").next()),
-			EPS_Y_DIFF             : () => readInnerText($("td:contains('Diluted EPS')").next().next()),
+			EPS_Y_DIFF             : () => evaluateAndFormatYearlyDiff($("td:contains('Diluted EPS')").next().next().find('> span > span')),
 			REVENUE                : () => readInnerText($("td:contains('Revenue')").next()),
-			REVENUE_Y_DIFF         : () => readInnerText($("td:contains('Revenue')").next().next()),
+			REVENUE_Y_DIFF         : () => evaluateAndFormatYearlyDiff($("td:contains('Revenue')").next().next().find('> span > span')),
 			NET_INCOME             : () => readInnerText($("td:contains('Net income')").next()),
-			NET_INCOME_Y_DIFF      : () => readInnerText($("td:contains('Net income')").next().next()),
+			NET_INCOME_Y_DIFF      : () => evaluateAndFormatYearlyDiff($("td:contains('Net income')").next().next().find('> span > span')),
 			NET_PROF_MARGIN        : () => readInnerText($("td:contains('Net profit margin')").next()),
-			NET_PROF_MARGIN_Y_DIFF : () => readInnerText($("td:contains('Net profit margin')").next().next()),
+			NET_PROF_MARGIN_Y_DIFF : () => evaluateAndFormatYearlyDiff($("td:contains('Net profit margin')").next().next().find('> span > span')),
 			
 			//
 			//RETURN NODES
@@ -85,6 +108,6 @@ async function exposeGetters( page ){
 }
 
 module.exports = {
-	prepare : async page => await injectJQuery(page),
+	prepare : async ( page, config ) => await injectJQuery(page, config),
 	exposeGetters
 };

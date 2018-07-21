@@ -33,7 +33,7 @@ function createAssetsDirectory( config ){
 	
 }
 
-async function changeTimeRange( page, timeRange ){
+async function changeTimeRange( page, timeRange, config ){
 	
 	await page.evaluate(( timeRange ) =>{
 		
@@ -42,7 +42,7 @@ async function changeTimeRange( page, timeRange ){
 		
 	}, timeRange);
 	
-	await page.waitFor(2000);
+	await page.waitFor(config.ajaxChartWaitTime);
 	
 }
 
@@ -79,7 +79,7 @@ async function gatherData( page, ticker, config, logger ){
 	
 	for ( let timeRange of TIMERANGES ) {
 		
-		await changeTimeRange(page, timeRange);
+		await changeTimeRange(page, timeRange, config);
 		
 		if ( config.use_images ) {
 			
@@ -126,7 +126,7 @@ function createInfoHTML( data ){
 	let infoTemplate = fs.readFileSync('./templates/info-template.html', 'utf8');
 	
 	infoTemplate = infoTemplate.replace('{{{price}}}', data.price);
-	infoTemplate = infoTemplate.replace('{{{eps}}}', data.eps);
+	infoTemplate = infoTemplate.replace('{{{eps}}}', data.eps !== '-' ? data.eps + '$' : data.eps);
 	infoTemplate = infoTemplate.replace('{{{p_e}}}', data.p_e);
 	infoTemplate = infoTemplate.replace('{{{eps_diff}}}', data.eps_y_diff);
 	infoTemplate = infoTemplate.replace('{{{dividends}}}', data.div_yeld);
@@ -149,15 +149,21 @@ async function convertToHTMLOutput( page, data, config, logger ){
 	logger(`🤖 Creating HTML for ${data.ticker}...`);
 	
 	let tickerTemplate = fs.readFileSync('./templates/ticker-template.html', 'utf8');
+	let tickerBadge    = fs.readFileSync('./templates/ticker-badge.html', 'utf8');
 	
 	const p_eData = config.p_e_ratio_warnings_strategy(data.p_e);
 	
 	tickerTemplate = tickerTemplate.replace('{{{ticker-name}}}', data.ticker);
 	tickerTemplate = tickerTemplate.replace('{{{ticker-full-name}}}', data.full_name);
 	
-	tickerTemplate = tickerTemplate.replace(/{{{pe-color}}}/g, p_eData.color);
-	tickerTemplate = tickerTemplate.replace('{{{pe-label}}}', p_eData.label);
-	tickerTemplate = tickerTemplate.replace('{{{pe-value}}}', data.p_e);
+	if ( data.p_e !== '-' ) {
+		tickerBadge    = tickerBadge.replace(/{{{pe-color}}}/g, p_eData.color);
+		tickerBadge    = tickerBadge.replace('{{{pe-label}}}', p_eData.label);
+		tickerBadge    = tickerBadge.replace('{{{pe-value}}}', data.p_e);
+		tickerTemplate = tickerTemplate.replace('{{{ticker-badge}}}', tickerBadge);
+	} else {
+		tickerTemplate = tickerTemplate.replace('{{{ticker-badge}}}', '');
+	}
 	
 	tickerTemplate = tickerTemplate.replace('{{{charts}}}', data.chartsHTML);
 	tickerTemplate = tickerTemplate.replace('{{{info}}}', createInfoHTML(data));
@@ -222,7 +228,7 @@ function createFinalHTMLPage( HTML, config, logger ){
 	
 }
 
-async function navigateToTicker( page, ticker ){
+async function navigateToTicker( page, ticker, config ){
 	
 	const navigationPromise = page.waitForNavigation();
 	await exposeGetters(page);
@@ -238,7 +244,7 @@ async function navigateToTicker( page, ticker ){
 	}, ticker);
 	
 	await navigationPromise;
-	await prepareTraversal(page);
+	await prepareTraversal(page, config);
 	await exposeGetters(page);
 	
 }
@@ -257,7 +263,7 @@ async function process( config, browser, logger ){
 		
 		logger(`🤖 Processing ${ticker}...`);
 		
-		await navigateToTicker(page, ticker);
+		await navigateToTicker(page, ticker, config);
 		let data = await gatherData(page, ticker, config, logger);
 		HTML += await convertToHTMLOutput(page, data, config, logger);
 		
