@@ -48,6 +48,9 @@ Example with `GIS` (General Mills, Inc.):
 The software is dependent on you internet connection speed. Please adjust the relative values in your `config.js` file to match the time required by your network to perform the needed operations (inject jQuery and wait for the ajax chart data response).
 
 ### How does it work? 🤔
+
+**1/8/18 Update: I have changed the underlying architecture to be based on an heavily concurrent approach. This speeds up the overall process of many times. The default setting uses a pool of 6 concurrent workers, but you can easily adjust the number in you configuration.**
+
 It automatically reads the data from the Google Finance website using [NodeJS](https://nodejs.org/en/) and [Puppeteer](https://github.com/GoogleChrome/puppeteer), capturing ~~screenshots~~ SVG-charts and data of a user-defined list of financial instruments.
 
 Then combines those information to create an easy digestible HTML file which at a quick glance sums up all the data.
@@ -57,4 +60,4 @@ It also enhance the data marking the Tickers with colours and labels defined in 
 As a **big bonus** it will output a fine selection of Emoji in the terminal log.
 
 ### Sample terminal output expected for Tickers \[`APPL`, `GOOG`, `JNJ`\]:
-![Terminal Output](assets/terminal-output-2.png?raw=true "Terminal Output")
+![Terminal Output](assets/terminal-output-3.png?raw=true "Terminal Output")

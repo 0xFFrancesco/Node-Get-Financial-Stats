@@ -50,7 +50,7 @@ async function gatherData( page, ticker, config, logger ){
 	
 	let elementData = {ticker};
 	
-	logger(`🤖 Gathering data for ${ticker}...`);
+	//logger(`🤖 Gathering data for ${ticker}...`);
 	
 	elementData = await page.evaluate(( elementData ) =>{
 		
@@ -93,7 +93,7 @@ async function gatherData( page, ticker, config, logger ){
 			
 		} else {
 			
-			logger(`📸 Cloning SVG for ${ticker} -> ${timeRange}...`);
+			//logger(`📸 Cloning SVG for ${ticker} -> ${timeRange}...`);
 			
 			elementData = await page.evaluate(( elementData ) =>{
 				
@@ -146,7 +146,7 @@ function createInfoHTML( data ){
 
 async function convertToHTMLOutput( page, data, config, logger ){
 	
-	logger(`🤖 Creating HTML for ${data.ticker}...`);
+	//logger(`🤖 Creating HTML for ${data.ticker}...`);
 	
 	let tickerTemplate = fs.readFileSync('./templates/ticker-template.html', 'utf8');
 	let tickerBadge    = fs.readFileSync('./templates/ticker-badge.html', 'utf8');
@@ -202,7 +202,7 @@ function deleteOldFiles( config, logger ){
 
 function copyAssets( config, logger ){
 	
-	logger(`🤖 Copying assets files...`);
+	logger(`📦 Copying assets files...`);
 	
 	const from = './templates/';
 	const to   = config.save_to_dir + config.assets_dir_name + '/';
@@ -217,7 +217,7 @@ function copyAssets( config, logger ){
 
 function createFinalHTMLPage( HTML, config, logger ){
 	
-	logger(`🤖 Creating final HTML page...`);
+	logger(`📦 Creating final HTML page...`);
 	
 	let finalPage = fs.readFileSync('./templates/base.html', 'utf8');
 	
@@ -249,6 +249,38 @@ async function navigateToTicker( page, ticker, config ){
 	
 }
 
+async function createPagePool( config, browser, logger ){
+	
+	const pool = [];
+	let page;
+	
+	logger(`🤖 Creating a pool of ${config.pool_size} concurrent workers...`);
+	
+	for ( let i = 0; i < config.pool_size; i++ ) {
+		
+		page = await browser.newPage();
+		await page.goto(ENDPOINT, {waitUntil : 'load'});
+		pool.push(page);
+		
+	}
+	
+	return pool;
+	
+}
+
+async function finalize( HTMLDataArray, config, logger ){
+	
+	logger(`👍️ All tickers have been processed!`);
+	
+	let HTML = HTMLDataArray.reduce(function( acc, item ){
+		return acc + item;
+	}, "");
+	
+	copyAssets(config, logger);
+	createFinalHTMLPage(HTML, config, logger);
+	
+}
+
 async function process( config, browser, logger ){
 	
 	const page = await browser.newPage();
@@ -257,20 +289,49 @@ async function process( config, browser, logger ){
 	deleteOldFiles(config, logger);
 	createAssetsDirectory(config);
 	
-	let HTML = '';
+	const pool          = await createPagePool(config, browser, logger);
+	const pool_sentinel = [];
 	
-	for ( let ticker of config.tickers ) {
+	let currentIndex  = 0;
+	let HTMLDataArray = [];
+	
+	for ( let [ index, worker ] of pool.entries() ) {
 		
-		logger(`🤖 Processing ${ticker}...`);
-		
-		await navigateToTicker(page, ticker, config);
-		let data = await gatherData(page, ticker, config, logger);
-		HTML += await convertToHTMLOutput(page, data, config, logger);
+		pool_sentinel.push(processSingleTicker(worker, ++index));
 		
 	}
 	
-	copyAssets(config, logger);
-	createFinalHTMLPage(HTML, config, logger);
+	return Promise.all(pool_sentinel).then(async function(){
+		return await finalize(HTMLDataArray, config, logger);
+	});
+	
+	function processSingleTicker( page, workerID ){
+		
+		return new Promise(async function( resolve, reject ){
+			
+			const tickers = config.tickers;
+			const index   = currentIndex;
+			currentIndex++;
+			
+			if ( index >= tickers.length ) {
+				page.close();
+				logger(`🤖 [worker#${workerID}]: no tickers left, unloading!`);
+				return resolve();
+			}
+			
+			const ticker = tickers[ index ];
+			
+			logger(`🤖 [worker#${workerID}]: processing ticker "${ticker}"...`);
+			
+			await navigateToTicker(page, ticker, config);
+			let data = await gatherData(page, ticker, config, logger);
+			HTMLDataArray[ index ] = await convertToHTMLOutput(page, data, config, logger);
+			
+			return resolve(processSingleTicker(page, workerID));
+			
+		});
+		
+	}
 	
 }
 
