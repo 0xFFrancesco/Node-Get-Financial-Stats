@@ -69,7 +69,16 @@ async function exposeGetters( page ){
 				const res = toNumber(readInnerText($("td:contains('P/E ratio')").next()));
 				return res === 0 ? '-' : res;
 			},
-			PRICE                  : () => toNumber(readInnerText($("span:contains('USD')").prev())),
+			PRICE                  : () => toNumber(readInnerText($('#knowledge-finance-wholepage__entity-summary > div > g-card-section > div > g-card-section > div > span > span > span'))),
+			CURRENCY               : () => {
+				let res = readInnerText($('#knowledge-finance-wholepage__entity-summary > div > g-card-section > div > g-card-section > div > span > span > span:nth-child(2)')).trim();
+				if (res === 'USD'){
+					res = '$';
+				} else if (res === 'EUR'){
+					res = '€'
+				}
+				return res;
+			},
 			FULL_NAME              : () => readInnerText($('[role="heading"] > div').next()),
 			CAP                    : () => readInnerText($("td:contains('Mkt cap')").next()),
 			DIV_YELD               : () => readInnerText($("td:contains('Div yield')").next()),

@@ -56,6 +56,7 @@ async function gatherData( page, ticker, config, logger ){
 		
 		elementData.p_e                = getters.P_E();
 		elementData.price              = getters.PRICE();
+		elementData.currency           = getters.CURRENCY();
 		elementData.full_name          = getters.FULL_NAME();
 		elementData.cap                = getters.CAP();
 		elementData.div_yeld           = getters.DIV_YELD();
@@ -126,7 +127,8 @@ function createInfoHTML( data ){
 	let infoTemplate = fs.readFileSync('./templates/info-template.html', 'utf8');
 	
 	infoTemplate = infoTemplate.replace('{{{price}}}', data.price);
-	infoTemplate = infoTemplate.replace('{{{eps}}}', data.eps !== '-' ? data.eps + '$' : data.eps);
+	infoTemplate = infoTemplate.replace(/{{{currency}}}/g, data.currency);
+	infoTemplate = infoTemplate.replace('{{{eps}}}', data.eps !== '-' ? data.eps + data.currency : data.eps);
 	infoTemplate = infoTemplate.replace('{{{p_e}}}', data.p_e);
 	infoTemplate = infoTemplate.replace('{{{eps_diff}}}', data.eps_y_diff);
 	infoTemplate = infoTemplate.replace('{{{dividends}}}', data.div_yeld);

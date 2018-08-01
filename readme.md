@@ -49,7 +49,7 @@ The software is dependent on you internet connection speed. Please adjust the re
 
 ### How does it work? 🤔
 
-**1/8/18 Update: I have changed the underlying architecture to be based on an heavily concurrent approach. This speeds up the overall process of many times. The default setting uses a pool of 6 concurrent workers, but you can easily adjust the number in you configuration.**
+**1/8/18 Update: I have changed the underlying architecture to be based on an heavily concurrent approach. This speeds up the overall process of many times. The default setting uses a pool of 6 concurrent workers, but you can easily adjust the number in you configuration. Added support for currencies different than USD too.**
 
 It automatically reads the data from the Google Finance website using [NodeJS](https://nodejs.org/en/) and [Puppeteer](https://github.com/GoogleChrome/puppeteer), capturing ~~screenshots~~ SVG-charts and data of a user-defined list of financial instruments.
 
