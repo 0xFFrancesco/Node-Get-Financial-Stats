@@ -7,8 +7,9 @@ const puppeteer = require('puppeteer');
 const prepareTraversal = require('./nodes-traversal').prepare;
 const exposeGetters    = require('./nodes-traversal').exposeGetters;
 
-const ENDPOINT   = "https://www.google.com/search?stick=H4sIAAAAAAAAAOPQeMSozC3w8sc9YSmpSWtOXmMU4RJyy8xLzEtO9UnMS8nMSw9ITE_lAQCCiJIYKAAAAA&q=finance&tbm=fin";
-const TIMERANGES = [ '1Y', '5Y', '40Y' ];
+const GF_ENDPOINT = "https://www.google.com/search?stick=H4sIAAAAAAAAAOPQeMSozC3w8sc9YSmpSWtOXmMU4RJyy8xLzEtO9UnMS8nMSw9ITE_lAQCCiJIYKAAAAA&q=finance&tbm=fin";
+const YF_ENDPOINT = "https://finance.yahoo.com/";
+const TIMERANGES  = [ '1Y', '5Y', '40Y' ];
 
 //
 //FUNCTIONS
@@ -46,34 +47,12 @@ async function changeTimeRange( page, timeRange, config ){
 	
 }
 
-async function gatherData( page, ticker, config, logger ){
+async function gatherCharts( page, ticker, config, logger ){
 	
-	let elementData = {ticker};
+	await page.goto(GF_ENDPOINT, {waitUntil : 'load'});
+	await navigateToTicker(page, ticker, 'GF', config);
 	
-	//logger(`🤖 Gathering data for ${ticker}...`);
-	
-	elementData = await page.evaluate(( elementData ) =>{
-		
-		elementData.p_e                = getters.P_E();
-		elementData.price              = getters.PRICE();
-		elementData.currency           = getters.CURRENCY();
-		elementData.full_name          = getters.FULL_NAME();
-		elementData.cap                = getters.CAP();
-		elementData.div_yeld           = getters.DIV_YELD();
-		elementData.y_fluctuantion_val = getters.Y_FLUCTUANTION_VAL();
-		elementData.y_fluctuantion_per = getters.Y_FLUCTUANTION_PER();
-		elementData.eps                = getters.EPS();
-		elementData.eps_y_diff         = getters.EPS_Y_DIFF();
-		elementData.revenue            = getters.REVENUE();
-		elementData.revenue_y_diff     = getters.REVENUE_Y_DIFF();
-		elementData.net_income         = getters.NET_INCOME();
-		elementData.net_income_y_diff  = getters.NET_INCOME_Y_DIFF();
-		elementData.net_prof           = getters.NET_PROF_MARGIN();
-		elementData.net_prof_y_diff    = getters.NET_PROF_MARGIN_Y_DIFF();
-		
-		return elementData;
-		
-	}, elementData);
+	let elementData = {};
 	
 	elementData.chartsHTML    = '';
 	elementData.chartsHTMLTmp = '';
@@ -110,8 +89,6 @@ async function gatherData( page, ticker, config, logger ){
 		
 	}
 	
-	return elementData;
-	
 	function createChartHTML( timeRange, chartHTML ){
 		
 		let chartTemplate = fs.readFileSync('./templates/chart-template.html', 'utf8');
@@ -120,57 +97,87 @@ async function gatherData( page, ticker, config, logger ){
 		
 	}
 	
-}
-
-function createInfoHTML( data ){
-	
-	let infoTemplate = fs.readFileSync('./templates/info-template.html', 'utf8');
-	
-	infoTemplate = infoTemplate.replace('{{{price}}}', data.price);
-	infoTemplate = infoTemplate.replace(/{{{currency}}}/g, data.currency);
-	infoTemplate = infoTemplate.replace('{{{eps}}}', data.eps !== '-' ? data.eps + data.currency : data.eps);
-	infoTemplate = infoTemplate.replace('{{{p_e}}}', data.p_e);
-	infoTemplate = infoTemplate.replace('{{{eps_diff}}}', data.eps_y_diff);
-	infoTemplate = infoTemplate.replace('{{{dividends}}}', data.div_yeld);
-	infoTemplate = infoTemplate.replace('{{{cap}}}', data.cap);
-	infoTemplate = infoTemplate.replace('{{{y_flu}}}', data.y_fluctuantion_val);
-	infoTemplate = infoTemplate.replace('{{{y_flu_perc}}}', data.y_fluctuantion_per);
-	infoTemplate = infoTemplate.replace('{{{y_rev}}}', data.revenue);
-	infoTemplate = infoTemplate.replace('{{{y_rev_perc}}}', data.revenue_y_diff);
-	infoTemplate = infoTemplate.replace('{{{y_inc}}}', data.net_income);
-	infoTemplate = infoTemplate.replace('{{{y_inc_perc}}}', data.net_income_y_diff);
-	infoTemplate = infoTemplate.replace('{{{y_prof}}}', data.net_prof);
-	infoTemplate = infoTemplate.replace('{{{y_prof_perc}}}', data.net_prof_y_diff);
-	
-	return infoTemplate;
+	return elementData;
 	
 }
 
-async function convertToHTMLOutput( page, data, config, logger ){
+async function gatherData( elementData, page, ticker, config, logger ){
 	
-	//logger(`🤖 Creating HTML for ${data.ticker}...`);
+	//logger(`🤖 Gathering data for ${ticker}...`);
 	
-	let tickerTemplate = fs.readFileSync('./templates/ticker-template.html', 'utf8');
-	let tickerBadge    = fs.readFileSync('./templates/ticker-badge.html', 'utf8');
+	await page.goto(YF_ENDPOINT, {
+		waitUntil : 'load',
+		timeout   : 0
+	});
 	
-	const p_eData = config.p_e_ratio_warnings_strategy(data.p_e);
+	await navigateToTicker(page, ticker, 'YF', config);
+	await navigateToStatistics(page);
 	
-	tickerTemplate = tickerTemplate.replace('{{{ticker-name}}}', data.ticker);
-	tickerTemplate = tickerTemplate.replace('{{{ticker-full-name}}}', data.full_name);
+	elementData.ticker = ticker;
 	
-	if ( data.p_e !== '-' ) {
-		tickerBadge    = tickerBadge.replace(/{{{pe-color}}}/g, p_eData.color);
-		tickerBadge    = tickerBadge.replace('{{{pe-label}}}', p_eData.label);
-		tickerBadge    = tickerBadge.replace('{{{pe-value}}}', data.p_e);
-		tickerTemplate = tickerTemplate.replace('{{{ticker-badge}}}', tickerBadge);
-	} else {
-		tickerTemplate = tickerTemplate.replace('{{{ticker-badge}}}', '');
+	elementData = await page.evaluate(( elementData ) =>{
+		
+		elementData.name     = getters.NAME();
+		elementData.currency = getters.CURRENCY();
+		
+		elementData.price        = getters.PRICE();
+		elementData.eps          = getters.EPS();
+		elementData.tr_p_e       = getters.TR_PE();
+		//elementData.fw_p_e        = getters.FW_PE();
+		elementData.book_ps      = getters.BOOK_PS();
+		elementData.p_book       = getters.P_BOOK();
+		elementData.div_yield    = getters.DIV_YIELD();
+		elementData.payout_ratio = getters.PAYOUT_RATIO();
+		
+		elementData.revenue     = getters.REVENUE();
+		elementData.g_profit    = getters.G_PROFIT();
+		elementData.net_income  = getters.NET_INCOME();
+		elementData.prof_margin = getters.PROF_MARGIN();
+		elementData.debt        = getters.DEBT();
+		elementData.debt_equity = getters.DEBT_EQUITY();
+		elementData.curr_ratio  = getters.CURR_RATIO();
+		
+		elementData.w52_h         = getters.W52_H();
+		elementData.w52_l         = getters.W52_L();
+		elementData.w52_c         = getters.W52_C();
+		elementData.avg_vol       = getters.AVG_VOL();
+		elementData.ret_on_equity = getters.RET_ON_EQUITY();
+		elementData.shorted       = getters.SHORTED();
+		elementData.cap           = getters.CAP();
+		//elementData.ret_on_assets = getters.RET_ON_ASSETS();
+		//elementData.short_ratio   = getters.SHORT_RATIO();
+		//elementData.beta          = getters.BETA();
+		
+		return elementData;
+		
+	}, elementData);
+	
+	return elementData;
+	
+}
+
+function replacePlaceholders( HTML, data ){
+	
+	for ( let key in data ) {
+		
+		let regexp = new RegExp(`{{{${key}}}}`, 'g');
+		HTML       = HTML.replace(regexp, data[ key ]);
+		
 	}
 	
-	tickerTemplate = tickerTemplate.replace('{{{charts}}}', data.chartsHTML);
-	tickerTemplate = tickerTemplate.replace('{{{info}}}', createInfoHTML(data));
+	return HTML;
 	
-	return tickerTemplate;
+}
+
+async function convertToHTMLOutput( page, data, config ){
+	
+	let tickerTemplate = fs.readFileSync('./templates/ticker-template.html', 'utf8');
+	tickerTemplate     = replacePlaceholders(tickerTemplate, data);
+	
+	let infoTemplate = fs.readFileSync('./templates/info-template.html', 'utf8');
+	tickerTemplate   = tickerTemplate.replace('{{{info}}}', replacePlaceholders(infoTemplate, data));
+	
+	return config.strategy_fn(tickerTemplate, data);
 	
 }
 
@@ -230,20 +237,47 @@ function createFinalHTMLPage( HTML, config, logger ){
 	
 }
 
-async function navigateToTicker( page, ticker, config ){
+async function navigateToStatistics( page ){
 	
-	const navigationPromise = page.waitForNavigation();
+	const navigationPromise = page.waitForNavigation({timeout : 0});
 	await exposeGetters(page);
 	
-	await page.evaluate(( ticker ) =>{
+	await page.evaluate(() =>{
 		
-		const input = getters.GET_SEARCH_FIELD();
-		const form  = getters.GET_SEARCH_FORM();
+		$('a:contains("Statistics")')[ 0 ].click();
+		
+	});
+	
+	await navigationPromise;
+	
+}
+
+async function prepareYahoo( page ){
+	
+	await page.goto(YF_ENDPOINT, {waitUntil : 'load'});
+	
+	const navigationPromise = page.waitForNavigation();
+	await page.evaluate(() =>{
+		document.querySelector('input.btn').click();
+	});
+	await navigationPromise;
+	
+}
+
+async function navigateToTicker( page, ticker, mode, config ){
+	
+	const navigationPromise = page.waitForNavigation({timeout : 0});
+	await exposeGetters(page);
+	
+	await page.evaluate(( ticker, mode ) =>{
+		
+		const input = getters[ mode + '_GET_SEARCH_FIELD' ]();
+		const form  = getters[ mode + '_GET_SEARCH_FORM' ]();
 		
 		input.value = ticker;
 		form.submit();
 		
-	}, ticker);
+	}, ticker, mode);
 	
 	await navigationPromise;
 	await prepareTraversal(page, config);
@@ -261,7 +295,6 @@ async function createPagePool( config, browser, logger ){
 	for ( let i = 0; i < config.pool_size; i++ ) {
 		
 		page = await browser.newPage();
-		await page.goto(ENDPOINT, {waitUntil : 'load'});
 		pool.push(page);
 		
 	}
@@ -285,9 +318,6 @@ async function finalize( HTMLDataArray, config, logger ){
 
 async function process( config, browser, logger ){
 	
-	const page = await browser.newPage();
-	await page.goto(ENDPOINT, {waitUntil : 'load'});
-	
 	deleteOldFiles(config, logger);
 	createAssetsDirectory(config);
 	
@@ -296,6 +326,8 @@ async function process( config, browser, logger ){
 	
 	let currentIndex  = 0;
 	let HTMLDataArray = [];
+	
+	await prepareYahoo(pool[ 0 ]);
 	
 	for ( let [ index, worker ] of pool.entries() ) {
 		
@@ -323,11 +355,12 @@ async function process( config, browser, logger ){
 			
 			const ticker = tickers[ index ];
 			
-			logger(`🤖 [worker#${workerID}]: processing ticker "${ticker}"...`);
+			logger(`🤖 [worker#${workerID}]: processing ticker "${ticker[ 0 ]}"...`);
 			
-			await navigateToTicker(page, ticker, config);
-			let data = await gatherData(page, ticker, config, logger);
-			HTMLDataArray[ index ] = await convertToHTMLOutput(page, data, config, logger);
+			let data = await gatherCharts(page, ticker[ 0 ], config, logger);
+			data     = await gatherData(data, page, ticker[ 1 ], config, logger);
+			
+			HTMLDataArray[ index ] = await convertToHTMLOutput(page, data, config);
 			
 			return resolve(processSingleTicker(page, workerID));
 			
@@ -341,7 +374,11 @@ async function execute( config, logger ){
 	
 	logger('⚡️ Starting...');
 	
-	const browser = await puppeteer.launch({args : [ '--lang=en-GB' ]});
+	const browser = await puppeteer.launch({
+		args     : [ '--lang=en-GB' ],
+		timeout  : 0,
+		headless : false
+	});
 	
 	await process(config, browser, logger).then(() =>{
 		logger('🌈 Task completed!');

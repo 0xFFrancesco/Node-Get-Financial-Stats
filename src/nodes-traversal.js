@@ -24,82 +24,56 @@ async function exposeGetters( page ){
 	
 	await page.evaluate(() =>{
 		
-		window.toNumber = function toNumber( string ){
-			
-			if ( string === '-' ) {
-				return 0;
-			}
-			
-			string = typeof string === "string" ? string : string + '';
-			return +(+((string.replace(',', '')).replace(',', '.'))).toFixed(2);
-		};
-		
 		window.readInnerText = function readInnerText( $obj ){
 			
 			return $obj[ 0 ] ? $obj[ 0 ].innerText : '-';
 			
 		};
 		
-		window.formatYearlyDiff = function( val, isUp ){
-			
-			if ( isUp ) {
-				return "+" + val;
-			}
-			return "-" + val;
-			
-		};
-		
-		window.evaluateAndFormatYearlyDiff = function( $obj ){
-			
-			if ( !$obj[ 0 ] || $obj[ 0 ].innerText === '-' ) {
-				return "-";
-			}
-			
-			let isUp = $obj[ 0 ].attributes[ 'aria-label' ].value.startsWith('Up');
-			return formatYearlyDiff(readInnerText($obj), isUp);
-			
-		};
+		window.getTableData = ( contains ) => readInnerText($('span:contains("' + contains + '")').parents('td').next().last());
 		
 		window.getters = {
 			
-			//
-			//RETURN VALUES
-			//
-			P_E                    : () =>{
-				const res = toNumber(readInnerText($("td:contains('P/E ratio')").next()));
-				return res === 0 ? '-' : res;
+			//YAHOO FINANCE
+			YF_GET_SEARCH_FIELD : () => document.querySelector('#fin-srch-assist input'),
+			YF_GET_SEARCH_FORM  : () => document.querySelector('#uh-search form'),
+			CURRENCY            : () =>{
+				const currency = readInnerText($('#Main div:contains("Currency in")').last()).split(' ').slice(-1)[ 0 ];
+				return currency === "USD" ? "$" : (currency === "EUR" ? "€" : currency);
 			},
-			PRICE                  : () => toNumber(readInnerText($('#knowledge-finance-wholepage__entity-summary > div > g-card-section > div > g-card-section > div > span > span > span'))),
-			CURRENCY               : () => {
-				let res = readInnerText($('#knowledge-finance-wholepage__entity-summary > div > g-card-section > div > g-card-section > div > span > span > span:nth-child(2)')).trim();
-				if (res === 'USD'){
-					res = '$';
-				} else if (res === 'EUR'){
-					res = '€'
-				}
-				return res;
-			},
-			FULL_NAME              : () => readInnerText($('[role="heading"] > div').next()),
-			CAP                    : () => readInnerText($("td:contains('Mkt cap')").next()),
-			DIV_YELD               : () => readInnerText($("td:contains('Div yield')").next()),
-			Y_FLUCTUANTION_VAL     : () => toNumber(toNumber(readInnerText($("td:contains('52-wk high')").next())) - toNumber(readInnerText($("td:contains('52-wk low')").next()))),
-			Y_FLUCTUANTION_PER     : () => toNumber((toNumber(readInnerText($("td:contains('52-wk high')").next())) - toNumber(readInnerText($("td:contains('52-wk low')").next()))) / window.getters.PRICE() * 100),
-			EPS                    : () => readInnerText($("td:contains('Diluted EPS')").next()),
-			EPS_Y_DIFF             : () => evaluateAndFormatYearlyDiff($("td:contains('Diluted EPS')").next().next().find('> span > span')),
-			REVENUE                : () => readInnerText($("td:contains('Revenue')").next()),
-			REVENUE_Y_DIFF         : () => evaluateAndFormatYearlyDiff($("td:contains('Revenue')").next().next().find('> span > span')),
-			NET_INCOME             : () => readInnerText($("td:contains('Net income')").next()),
-			NET_INCOME_Y_DIFF      : () => evaluateAndFormatYearlyDiff($("td:contains('Net income')").next().next().find('> span > span')),
-			NET_PROF_MARGIN        : () => readInnerText($("td:contains('Net profit margin')").next()),
-			NET_PROF_MARGIN_Y_DIFF : () => evaluateAndFormatYearlyDiff($("td:contains('Net profit margin')").next().next().find('> span > span')),
 			
-			//
-			//RETURN NODES
-			//
-			GET_TIMERANGE_BTN : ( timeRange ) => $(`div[data-period="${timeRange}"]`)[ 0 ],
-			GET_SEARCH_FIELD  : () => document.querySelector('#lst-ib'),
-			GET_SEARCH_FORM   : () => document.querySelector('[name="f"]'),
-			GET_SEARCH_SUBMIT : () => $('[name="btnG"]')[ 0 ],
+			NAME          : () => readInnerText($('h1')).split('(')[ 0 ],
+			PRICE         : () => readInnerText($('div#quote-market-notice').prev().prev()),
+			TR_PE         : () => getTableData("Trailing P/E"),
+			FW_PE         : () => getTableData("Forward P/E"),
+			P_BOOK        : () => getTableData("Price/Book"),
+			PROF_MARGIN   : () => getTableData("Profit Margin"),
+			RET_ON_ASSETS : () => getTableData("Return on Assets"),
+			RET_ON_EQUITY : () => getTableData("Return on Equity"),
+			REVENUE       : () => getTableData("Revenue"),
+			G_PROFIT      : () => getTableData("Gross Profit"),
+			NET_INCOME    : () => getTableData("Net Income Avi to Common"),
+			EPS           : () => getTableData("Diluted EP"),
+			DEBT          : () => getTableData("Total Debt"),
+			DEBT_EQUITY   : () => getTableData("Total Debt/Equity"),
+			CURR_RATIO    : () => getTableData("Current Ratio"),
+			BOOK_PS       : () => getTableData("Book Value Per Share"),
+			BETA          : () => getTableData("Beta"),
+			W52_H         : () => getTableData("52 Week High"),
+			W52_L         : () => getTableData("52 Week Low"),
+			W52_C         : () => getTableData("52-Week Change"),
+			AVG_VOL       : () => getTableData("Avg Vol (3 month)"),
+			SHORT_RATIO   : () => getTableData("Short Ratio"),
+			SHORTED       : () => getTableData("Short % of Shares"),
+			PAYOUT_RATIO  : () => getTableData("Payout Ratio"),
+			DIV_YIELD     : () => getTableData("Trailing Annual Dividend Yield"),
+			CAP           : () => getTableData("Market Cap"),
+			
+			
+			//GOOGLE FINANCE
+			GET_TIMERANGE_BTN   : ( timeRange ) => $(`div[data-period="${timeRange}"]`)[ 0 ],
+			GF_GET_SEARCH_FIELD : () => document.querySelector('#lst-ib'),
+			GF_GET_SEARCH_FORM  : () => document.querySelector('[name="f"]'),
 			
 			SVG_DOM_CHART_CLONE : () =>{
 				$('.knowledge-finance-wholepage-chart__fw-hdot.knowledge-finance-wholepage-chart__fw-hdot-cu').remove();

@@ -11,6 +11,8 @@ I like the Google Finance website, though I would have designed it differently, 
 
 This is kind of how I would have designed the Google Finance website.
 
+Moreover Google Finance has not much financial data, so from the 19/8/18 update, I use Yahoo Finance to gather the financial data, while still relying on Google Finance for the charts (as they are in SVG and prettier).
+
 ### Usage:
 - Copy the `config-template.js` file to a new file called `config.js`;
 - Edit the file `config.js` to match your preferences;
@@ -33,9 +35,9 @@ This is kind of how I would have designed the Google Finance website.
 
 ##### It doesn't read the Ticker:
 
-It may be possible that Google Finance doesn't find your defined Ticker, resulting in an error.
+It may be possible that Google Finance or Yahoo Finance don't find your defined Ticker, resulting in an error.
 
-In that case you can go manually to the Google Finance website, find your product, and then use the full Ticker.
+In that case you can go manually to the Google Finance or Yahoo Finance website, find your product, and then use the full Ticker.
 
 Example with `GIS` (General Mills, Inc.):
 - \[`GIS`\] -> error 😒;
@@ -51,7 +53,9 @@ The software is dependent on you internet connection speed. Please adjust the re
 
 **1/8/18 Update: I have changed the underlying architecture to be based on an heavily concurrent approach. This speeds up the overall process of many times. The default setting uses a pool of 6 concurrent workers, but you can easily adjust the number in you configuration. Added support for currencies different than USD too.**
 
-It automatically reads the data from the Google Finance website using [NodeJS](https://nodejs.org/en/) and [Puppeteer](https://github.com/GoogleChrome/puppeteer), capturing ~~screenshots~~ SVG-charts and data of a user-defined list of financial instruments.
+**19/8/18 Update: I switched the data gathering to Yahoo Finance as it has much more useful data. The charts are still taken from Google Finance as they are SVGs (and prettier). Unfortunately now we have to provide two tickers, one working in Google Finance, and another working in Yahoo Finance, as they might differ. The strategy FN has been changed, now it gets provided with the generated HTML ticker and the ticker data object itself, so you can create a full fledged function with all your custom requirements/logic.**
+
+It automatically reads the data from the Google Finance and the Yahoo Finance websites using [NodeJS](https://nodejs.org/en/) and [Puppeteer](https://github.com/GoogleChrome/puppeteer), capturing ~~screenshots~~ SVG-charts and data of a user-defined list of financial instruments.
 
 Then combines those information to create an easy digestible HTML file which at a quick glance sums up all the data.
 
