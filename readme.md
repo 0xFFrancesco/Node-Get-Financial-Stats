@@ -47,7 +47,7 @@ Example with `GIS` (General Mills, Inc.):
 
 ##### Its too fast or too slow for *my* network:
 
-The software is dependent on you internet connection speed. Please adjust the relative values in your `config.js` file to match the time required by your network to perform the needed operations (inject jQuery and wait for the ajax chart data response).
+The software is dependent on you internet connection speed. Please adjust the relative values in your `config.js` file to match the time required by your network to perform the needed operations (wait for the ajax chart data response).
 
 ### How does it work? 🤔
 

@@ -1,22 +1,34 @@
 async function injectJQuery( page, config ){
 	
-	await page.evaluate(() =>{
+	let promise = await page.evaluate(() =>{
 		
-		function l( u, i ){
-			var d = document;
-			if ( !d.getElementById(i) ) {
-				var s = d.createElement('script');
-				s.src = u;
-				s.id  = i;
-				d.body.appendChild(s);
+		let promise = new Promise(function( resolve, reject ){
+			
+			function l( u, i ){
+				
+				let d = document;
+				
+				if ( !d.getElementById(i) ) {
+					let s    = d.createElement('script');
+					s.src    = u;
+					s.id     = i;
+					s.onload = function(){
+						resolve();
+					};
+					d.body.appendChild(s);
+				}
 			}
-		}
+			
+			l('//code.jquery.com/jquery-3.2.1.min.js', 'jquery');
+			
+		});
 		
-		l('//code.jquery.com/jquery-3.2.1.min.js', 'jquery');
+		return promise;
 		
 	});
 	
-	await page.waitFor(config.injectJqueryWaitTime);
+	await promise;
+	await page.waitFor(250);
 	
 }
 

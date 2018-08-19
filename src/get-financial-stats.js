@@ -240,15 +240,13 @@ function createFinalHTMLPage( HTML, config, logger ){
 async function navigateToStatistics( page ){
 	
 	const navigationPromise = page.waitForNavigation({timeout : 0});
-	await exposeGetters(page);
-	
 	await page.evaluate(() =>{
 		
 		$('a:contains("Statistics")')[ 0 ].click();
 		
 	});
-	
 	await navigationPromise;
+	await exposeGetters(page);
 	
 }
 

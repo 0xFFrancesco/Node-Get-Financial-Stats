@@ -9,7 +9,6 @@ module.exports = {
 	//
 	//OPTIONAL
 	//
-	injectJqueryWaitTime : 2500,
 	ajaxChartWaitTime    : 2500,
 	assets_dir_name      : 'financial_stats_assets',
 	file_name            : 'financial_stats.html',
