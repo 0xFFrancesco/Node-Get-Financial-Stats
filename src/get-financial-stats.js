@@ -49,8 +49,12 @@ async function changeTimeRange( page, timeRange, config ){
 
 async function gatherCharts( page, ticker, config, logger ){
 	
-	await page.goto(GF_ENDPOINT, {waitUntil : 'load'});
-	await navigateToTicker(page, ticker, 'GF', config);
+	await page.goto(GF_ENDPOINT, {
+		waitUntil : 'load',
+		timeout   : 0
+	});
+	
+	await navigateToTicker(page, ticker, 'GF');
 	
 	let elementData = {};
 	
@@ -110,7 +114,7 @@ async function gatherData( elementData, page, ticker, config, logger ){
 		timeout   : 0
 	});
 	
-	await navigateToTicker(page, ticker, 'YF', config);
+	await navigateToTicker(page, ticker, 'YF');
 	await navigateToStatistics(page);
 	
 	elementData.ticker = ticker;
@@ -151,6 +155,8 @@ async function gatherData( elementData, page, ticker, config, logger ){
 		return elementData;
 		
 	}, elementData);
+	
+	await page.waitFor(500);
 	
 	return elementData;
 	
@@ -239,20 +245,28 @@ function createFinalHTMLPage( HTML, config, logger ){
 
 async function navigateToStatistics( page ){
 	
-	const navigationPromise = page.waitForNavigation({timeout : 0});
+	const navigationPromise = page.waitForNavigation({
+		waitUntil : 'load',
+		timeout   : 0
+	});
 	await page.evaluate(() =>{
 		
 		$('a:contains("Statistics")')[ 0 ].click();
 		
 	});
 	await navigationPromise;
+	
+	await prepareTraversal(page);
 	await exposeGetters(page);
 	
 }
 
 async function prepareYahoo( page ){
 	
-	await page.goto(YF_ENDPOINT, {waitUntil : 'load'});
+	await page.goto(YF_ENDPOINT, {
+		waitUntil : 'load',
+		timeout   : 0
+	});
 	
 	const navigationPromise = page.waitForNavigation();
 	await page.evaluate(() =>{
@@ -262,11 +276,14 @@ async function prepareYahoo( page ){
 	
 }
 
-async function navigateToTicker( page, ticker, mode, config ){
+async function navigateToTicker( page, ticker, mode ){
 	
-	const navigationPromise = page.waitForNavigation({timeout : 0});
 	await exposeGetters(page);
 	
+	const navigationPromise = page.waitForNavigation({
+		waitUntil : 'load',
+		timeout   : 0
+	});
 	await page.evaluate(( ticker, mode ) =>{
 		
 		const input = getters[ mode + '_GET_SEARCH_FIELD' ]();
@@ -276,9 +293,9 @@ async function navigateToTicker( page, ticker, mode, config ){
 		form.submit();
 		
 	}, ticker, mode);
-	
 	await navigationPromise;
-	await prepareTraversal(page, config);
+	
+	await prepareTraversal(page);
 	await exposeGetters(page);
 	
 }
@@ -356,7 +373,7 @@ async function process( config, browser, logger ){
 			logger(`🤖 [worker#${workerID}]: processing ticker "${ticker[ 0 ]}"...`);
 			
 			let data = await gatherCharts(page, ticker[ 0 ], config, logger);
-			data     = await gatherData(data, page, ticker[ 1 ], config, logger);
+			data     = await gatherData(data, page, ticker[ 1 ], config, logger).catch(err => logger(`🔥 An error occurred on Ticker "${ticker[ 1 ]}": ` + err));
 			
 			HTMLDataArray[ index ] = await convertToHTMLOutput(page, data, config);
 			
@@ -373,9 +390,8 @@ async function execute( config, logger ){
 	logger('⚡️ Starting...');
 	
 	const browser = await puppeteer.launch({
-		args     : [ '--lang=en-GB' ],
-		timeout  : 0,
-		headless : false
+		args    : [ '--lang=en-GB' ],
+		timeout : 0, //headless : false
 	});
 	
 	await process(config, browser, logger).then(() =>{

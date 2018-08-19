@@ -1,34 +1,20 @@
-async function injectJQuery( page, config ){
+const fs = require('fs-extra');
+
+async function injectJQuery( page ){
 	
-	let promise = await page.evaluate(() =>{
+	const jquery = fs.readFileSync('./assets/jquery.min.js', 'utf8');
+	await page.evaluate(jquery =>{
 		
-		let promise = new Promise(function( resolve, reject ){
+		(function(){
 			
-			function l( u, i ){
-				
-				let d = document;
-				
-				if ( !d.getElementById(i) ) {
-					let s    = d.createElement('script');
-					s.src    = u;
-					s.id     = i;
-					s.onload = function(){
-						resolve();
-					};
-					d.body.appendChild(s);
-				}
-			}
+			let d  = document;
+			let s  = d.createElement('script');
+			s.text = jquery;
+			d.body.appendChild(s);
 			
-			l('//code.jquery.com/jquery-3.2.1.min.js', 'jquery');
-			
-		});
+		})();
 		
-		return promise;
-		
-	});
-	
-	await promise;
-	await page.waitFor(250);
+	}, jquery);
 	
 }
 
@@ -62,7 +48,7 @@ async function exposeGetters( page ){
 			PROF_MARGIN   : () => getTableData("Profit Margin"),
 			RET_ON_ASSETS : () => getTableData("Return on Assets"),
 			RET_ON_EQUITY : () => getTableData("Return on Equity"),
-			REVENUE       : () => getTableData("Revenue (ttm)"),
+			REVENUE       : () => readInnerText($($('span:contains("Revenue")')[ 1 ]).parents('td').next().last()),
 			G_PROFIT      : () => getTableData("Gross Profit"),
 			NET_INCOME    : () => getTableData("Net Income Avi to Common"),
 			EPS           : () => getTableData("Diluted EP"),
@@ -103,6 +89,6 @@ async function exposeGetters( page ){
 }
 
 module.exports = {
-	prepare : async ( page, config ) => await injectJQuery(page, config),
+	prepare : async ( page ) => await injectJQuery(page),
 	exposeGetters
 };
