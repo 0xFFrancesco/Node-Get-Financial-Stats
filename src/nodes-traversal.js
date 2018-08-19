@@ -50,7 +50,7 @@ async function exposeGetters( page ){
 			YF_GET_SEARCH_FIELD : () => document.querySelector('#fin-srch-assist input'),
 			YF_GET_SEARCH_FORM  : () => document.querySelector('#uh-search form'),
 			CURRENCY            : () =>{
-				const currency = readInnerText($('#Main div:contains("Currency in")').last()).split(' ').slice(-1)[ 0 ];
+				const currency = readInnerText($('#Main span:contains("Currency in")').first()).split(' ').slice(-1)[ 0 ];
 				return currency === "USD" ? "$" : (currency === "EUR" ? "€" : currency);
 			},
 			
@@ -62,7 +62,7 @@ async function exposeGetters( page ){
 			PROF_MARGIN   : () => getTableData("Profit Margin"),
 			RET_ON_ASSETS : () => getTableData("Return on Assets"),
 			RET_ON_EQUITY : () => getTableData("Return on Equity"),
-			REVENUE       : () => getTableData("Revenue"),
+			REVENUE       : () => getTableData("Revenue (ttm)"),
 			G_PROFIT      : () => getTableData("Gross Profit"),
 			NET_INCOME    : () => getTableData("Net Income Avi to Common"),
 			EPS           : () => getTableData("Diluted EP"),
