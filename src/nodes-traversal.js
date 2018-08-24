@@ -22,15 +22,11 @@ async function exposeGetters( page ){
 	
 	await page.evaluate(() =>{
 		
-		window.readInnerText = function readInnerText( $obj ){
-			
-			return $obj[ 0 ] ? $obj[ 0 ].innerText : '-';
-			
-		};
-		
-		window.getTableData = ( contains ) => readInnerText($('span:contains("' + contains + '")').parents('td').next().last());
+		window.readInnerText = $obj => $obj[ 0 ] ? $obj[ 0 ].innerText : '-';
+		window.getTableData  = contains => readInnerText($('span:contains("' + contains + '")').parents('td').next().last());
 		
 		window.getters = {
+			
 			
 			//YAHOO FINANCE
 			YF_GET_SEARCH_FIELD : () => document.querySelector('#fin-srch-assist input'),
@@ -77,10 +73,16 @@ async function exposeGetters( page ){
 				$('.knowledge-finance-wholepage-chart__fw-hdot.knowledge-finance-wholepage-chart__fw-hdot-cu').remove();
 				return $('[data-async-type="finance_wholepage_chart"]')[ 0 ].outerHTML;
 			},
+			DOM_CHART_NODE      : () => $('[data-async-type="finance_wholepage_chart"]')[ 0 ],
 			
-			DOM_CHART_NODE : () =>{
-				return $('[data-async-type="finance_wholepage_chart"]')[ 0 ];
-			}
+			
+			//FRED CHARTS
+			SPREAD_10Y_2Y : () => document.querySelector('.highcharts-container'),
+			UNEMPLOYMENT  : () => document.querySelector('.highcharts-container'),
+			
+			
+			//YIELD CURVE CHARTS
+			YIELD_CURVE_CHART: () => document.querySelector('chart'),
 			
 		};
 		
@@ -89,6 +91,6 @@ async function exposeGetters( page ){
 }
 
 module.exports = {
-	prepare : async ( page ) => await injectJQuery(page),
+	prepare : async page => await injectJQuery(page),
 	exposeGetters
 };

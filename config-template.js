@@ -5,6 +5,7 @@ module.exports = {
 	//
 	save_to_dir : 'INSERT HERE THE PATH TO SAVE THE GENERATED DATA',
 	tickers     : [ [ 'APPL', 'APPL' ], [ 'GOOG', 'GOOG' ], [ 'JNJ', 'JNJ' ], /* ['TICKER4_Google', 'TICKER4_Yahoo'], ... */ ],
+	tickersETFs     : [ /* same format as tickers */ ],
 	
 	//
 	//OPTIONAL
@@ -14,6 +15,7 @@ module.exports = {
 	file_name            : 'financial_stats.html',
 	use_images           : false, 	//whether to use images instead of cloning SVGs nodes [EXPERIMENTAL]
 	pool_size            : 6,		//number of concurrent workers
+	max_retry            : 3,		//number of max attempts to retry in case of ticker error
 	
 	strategy_fn : function( TickerHTML, TickerOBJ ){
 		

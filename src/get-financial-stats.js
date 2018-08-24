@@ -7,18 +7,21 @@ const puppeteer = require('puppeteer');
 const prepareTraversal = require('./nodes-traversal').prepare;
 const exposeGetters    = require('./nodes-traversal').exposeGetters;
 
-const GF_ENDPOINT = "https://www.google.com/search?stick=H4sIAAAAAAAAAOPQeMSozC3w8sc9YSmpSWtOXmMU4RJyy8xLzEtO9UnMS8nMSw9ITE_lAQCCiJIYKAAAAA&q=finance&tbm=fin";
-const YF_ENDPOINT = "https://finance.yahoo.com/";
-const TIMERANGES  = [ '1Y', '5Y', '40Y' ];
+//
+//CONSTS
+//
+const GF_ENDPOINT          = "https://www.google.com/search?stick=H4sIAAAAAAAAAOPQeMSozC3w8sc9YSmpSWtOXmMU4RJyy8xLzEtO9UnMS8nMSw9ITE_lAQCCiJIYKAAAAA&q=finance&tbm=fin";
+const YF_ENDPOINT          = "https://finance.yahoo.com/";
+const FRED_ENDPOINT        = "https://fred.stlouisfed.org/series/";
+const YIELD_CURVE_ENDPOINT = "https://www.bondsupermart.com/main/market-info/yield-curves-chart";
+const TIMERANGES           = [ '1Y', '5Y', '40Y' ];
 
 //
 //FUNCTIONS
 //
 async function saveSingleImage( element, imageName, config, logger ){
 	
-	const dest          = config.save_to_dir + config.assets_dir_name + '/';
-	const imageFullPath = dest + imageName + '.jpg';
-	
+	const imageFullPath = config.assets_dir + imageName + '.jpg';
 	logger(`📸 Saving file: ${imageFullPath}...`);
 	
 	return await element.screenshot({path : imageFullPath});
@@ -27,9 +30,8 @@ async function saveSingleImage( element, imageName, config, logger ){
 
 function createAssetsDirectory( config ){
 	
-	const dest = config.save_to_dir + config.assets_dir_name + '/';
-	if ( !fs.existsSync(dest) ) {
-		fs.mkdirSync(dest);
+	if ( !fs.existsSync(config.assets_dir) ) {
+		fs.mkdirSync(config.assets_dir);
 	}
 	
 }
@@ -47,57 +49,26 @@ async function changeTimeRange( page, timeRange, config ){
 	
 }
 
-async function gatherCharts( page, ticker, config, logger ){
+async function gatherCharts( page, ticker, config ){
 	
-	await page.goto(GF_ENDPOINT, {
-		waitUntil : 'load',
-		timeout   : 0
-	});
+	await goto(page, GF_ENDPOINT);
 	
 	await navigateToTicker(page, ticker, 'GF');
 	
-	let elementData = {};
+	let elementData   = {};
+	let chartsHTMLTmp = '';
 	
-	elementData.chartsHTML    = '';
-	elementData.chartsHTMLTmp = '';
+	elementData.chartsHTML = '';
 	
 	for ( let timeRange of TIMERANGES ) {
 		
 		await changeTimeRange(page, timeRange, config);
 		
-		if ( config.use_images ) {
-			
-			let DOMElement = await page.evaluate(() =>{
-				return getters.DOM_CHART_NODE();
-			});
-			
-			await saveSingleImage(DOMElement, name, config, logger);
-			
-			elementData.chartsHTML += createChartHTML(timeRange, `<img src="./${config.assets_dir_name}/${ticker}${timeRange}.jpg">`);
-			
-		} else {
-			
-			//logger(`📸 Cloning SVG for ${ticker} -> ${timeRange}...`);
-			
-			elementData = await page.evaluate(( elementData ) =>{
-				
-				elementData.chartsHTMLTmp += getters.SVG_DOM_CHART_CLONE();
-				return elementData;
-				
-			}, elementData);
-			
-			elementData.chartsHTML += createChartHTML(timeRange, elementData.chartsHTMLTmp);
-			elementData.chartsHTMLTmp = '';
-			
-		}
+		chartsHTMLTmp = await page.evaluate(() =>{
+			return getters.SVG_DOM_CHART_CLONE();
+		});
 		
-	}
-	
-	function createChartHTML( timeRange, chartHTML ){
-		
-		let chartTemplate = fs.readFileSync('./templates/chart-template.html', 'utf8');
-		chartTemplate     = chartTemplate.replace('{{{timeRange}}}', timeRangeToDisplayValue(timeRange));
-		return chartTemplate.replace('{{{chart}}}', chartHTML);
+		elementData.chartsHTML += createChartHTML(timeRange, chartsHTMLTmp);
 		
 	}
 	
@@ -105,15 +76,17 @@ async function gatherCharts( page, ticker, config, logger ){
 	
 }
 
-async function gatherData( elementData, page, ticker, config, logger ){
+function createChartHTML( timeRange, chartHTML ){
 	
-	//logger(`🤖 Gathering data for ${ticker}...`);
+	let chartTemplate = fs.readFileSync('./templates/chart-template.html', 'utf8');
+	chartTemplate     = chartTemplate.replace('{{{timeRange}}}', timeRangeToDisplayValue(timeRange));
+	return chartTemplate.replace('{{{chart}}}', chartHTML);
 	
-	await page.goto(YF_ENDPOINT, {
-		waitUntil : 'load',
-		timeout   : 0
-	});
+}
+
+async function gatherData( elementData, page, ticker ){
 	
+	await goto(page, YF_ENDPOINT);
 	await navigateToTicker(page, ticker, 'YF');
 	await navigateToStatistics(page);
 	
@@ -157,7 +130,6 @@ async function gatherData( elementData, page, ticker, config, logger ){
 	}, elementData);
 	
 	await page.waitFor(500);
-	
 	return elementData;
 	
 }
@@ -165,23 +137,32 @@ async function gatherData( elementData, page, ticker, config, logger ){
 function replacePlaceholders( HTML, data ){
 	
 	for ( let key in data ) {
-		
 		let regexp = new RegExp(`{{{${key}}}}`, 'g');
 		HTML       = HTML.replace(regexp, data[ key ]);
-		
 	}
 	
 	return HTML;
 	
 }
 
-async function convertToHTMLOutput( page, data, config ){
+async function convertToHTMLOutput( page, data, config, isEFT ){
 	
-	let tickerTemplate = fs.readFileSync('./templates/ticker-template.html', 'utf8');
-	tickerTemplate     = replacePlaceholders(tickerTemplate, data);
+	let tickerTemplate;
 	
-	let infoTemplate = fs.readFileSync('./templates/info-template.html', 'utf8');
-	tickerTemplate   = tickerTemplate.replace('{{{info}}}', replacePlaceholders(infoTemplate, data));
+	if ( !isEFT ) {
+		
+		tickerTemplate = fs.readFileSync('./templates/ticker-template.html', 'utf8');
+		tickerTemplate = replacePlaceholders(tickerTemplate, data);
+		
+		let infoTemplate = fs.readFileSync('./templates/info-template.html', 'utf8');
+		tickerTemplate   = tickerTemplate.replace('{{{info}}}', replacePlaceholders(infoTemplate, data));
+		
+	} else {
+		
+		tickerTemplate = fs.readFileSync('./templates/ticker-template-etf.html', 'utf8');
+		tickerTemplate = replacePlaceholders(tickerTemplate, data);
+		
+	}
 	
 	return config.strategy_fn(tickerTemplate, data);
 	
@@ -215,29 +196,27 @@ function deleteOldFiles( config, logger ){
 	
 }
 
-function copyAssets( config, logger ){
+function copyAssets( logger, config ){
 	
 	logger(`📦 Copying assets files...`);
-	
 	const from = './templates/';
-	const to   = config.save_to_dir + config.assets_dir_name + '/';
 	
 	[ 'styles.css', 'reset.css', 'favicon.ico' ].forEach(file =>{
-		
-		fs.copyFileSync(from + file, to + file);
-		
+		fs.copyFileSync(from + file, config.assets_dir + file);
 	});
 	
 }
 
-function createFinalHTMLPage( HTML, config, logger ){
+function createFinalHTMLPage( HTMLStocks, HTMLETFs, HTMLMarkets, config, logger ){
 	
 	logger(`📦 Creating final HTML page...`);
 	
 	let finalPage = fs.readFileSync('./templates/base.html', 'utf8');
 	
 	finalPage = finalPage.replace(/{{{assets_dir}}}/g, config.assets_dir_name);
-	finalPage = finalPage.replace('{{{data}}}', HTML);
+	finalPage = finalPage.replace('{{{data-stocks}}}', HTMLStocks);
+	finalPage = finalPage.replace('{{{data-etfs}}}', HTMLETFs);
+	finalPage = finalPage.replace('{{{data-markets}}}', HTMLMarkets);
 	
 	fs.writeFileSync(config.save_to_dir + config.file_name, finalPage);
 	
@@ -245,14 +224,10 @@ function createFinalHTMLPage( HTML, config, logger ){
 
 async function navigateToStatistics( page ){
 	
-	const navigationPromise = page.waitForNavigation({
-		waitUntil : 'load',
-		timeout   : 0
-	});
+	const navigationPromise = waitForNavigation(page);
+	
 	await page.evaluate(() =>{
-		
 		$('a:contains("Statistics")')[ 0 ].click();
-		
 	});
 	await navigationPromise;
 	
@@ -263,12 +238,9 @@ async function navigateToStatistics( page ){
 
 async function prepareYahoo( page ){
 	
-	await page.goto(YF_ENDPOINT, {
-		waitUntil : 'load',
-		timeout   : 0
-	});
+	await goto(page, YF_ENDPOINT);
 	
-	const navigationPromise = page.waitForNavigation();
+	const navigationPromise = waitForNavigation(page);
 	await page.evaluate(() =>{
 		document.querySelector('input.btn').click();
 	});
@@ -280,10 +252,7 @@ async function navigateToTicker( page, ticker, mode ){
 	
 	await exposeGetters(page);
 	
-	const navigationPromise = page.waitForNavigation({
-		waitUntil : 'load',
-		timeout   : 0
-	});
+	const navigationPromise = waitForNavigation(page);
 	await page.evaluate(( ticker, mode ) =>{
 		
 		const input = getters[ mode + '_GET_SEARCH_FIELD' ]();
@@ -308,36 +277,112 @@ async function createPagePool( config, browser, logger ){
 	logger(`🤖 Creating a pool of ${config.pool_size} concurrent workers...`);
 	
 	for ( let i = 0; i < config.pool_size; i++ ) {
-		
 		page = await browser.newPage();
 		pool.push(page);
-		
 	}
 	
 	return pool;
 	
 }
 
-async function finalize( HTMLDataArray, config, logger ){
+async function goto( page, url ){
 	
-	logger(`👍️ All tickers have been processed!`);
+	await page.goto(url, {
+		waitUntil : 'load',
+		timeout   : 0
+	});
 	
-	let HTML = HTMLDataArray.reduce(function( acc, item ){
-		return acc + item;
-	}, "");
+}
+
+function waitForNavigation( page ){
 	
-	copyAssets(config, logger);
-	createFinalHTMLPage(HTML, config, logger);
+	return page.waitForNavigation({
+		waitUntil : 'load',
+		timeout   : 0
+	});
+	
+}
+
+async function removeUnusedDataFromBondYieldCurveChart( page ){
+	
+	await page.evaluate(() =>{
+		$('tspan:contains("1 Week")').click();
+		$('tspan:contains("1 Month")').click();
+	});
+	
+}
+
+async function changeCountryOfYieldCurveChart( page, name ){
+	
+	await page.evaluate(name =>{
+		$('#countrySelect li:contains("' + name + '")').click();
+	}, name);
+	await page.waitFor(2000);
+	
+}
+
+async function getElementFromGetter( page, getter ){
+	
+	return await page.evaluate(getter =>{
+		return getters[ getter ]();
+	}, getter);
+	
+}
+
+async function getMarketsHTML( browser, config, logger ){
+	
+	logger(`🤖 Processing the General Market Indicators...`);
+	
+	const page = await browser.newPage();
+	
+	await goto(page, FRED_ENDPOINT + 'T10Y2Y');
+	await saveSingleImage(await getElementFromGetter(page, "SPREAD_10Y_2Y"), "T10Y2Y", config, logger);
+	
+	await goto(page, FRED_ENDPOINT + 'UNRATE');
+	await saveSingleImage(await getElementFromGetter(page, "UNEMPLOYMENT"), "T10Y2Y", config, logger);
+	
+	await goto(page, YIELD_CURVE_ENDPOINT);
+	[ "United States", "Euro", "China", "India" ].forEach(async country =>{
+		
+		await changeCountryOfYieldCurveChart(page, country);
+		await removeUnusedDataFromBondYieldCurveChart(page);
+		await saveSingleImage(await getElementFromGetter(page, "YIELD_CURVE_CHART"), "YC-" + country.replace(" ", "-"), config, logger);
+		
+	});
+	
+	return fs.readFileSync('./templates/markets.html', 'utf8');
 	
 }
 
 async function process( config, browser, logger ){
 	
 	deleteOldFiles(config, logger);
-	createAssetsDirectory(config);
+	createAssetsDirectory();
 	
-	const pool          = await createPagePool(config, browser, logger);
-	const pool_sentinel = [];
+	const HTMLStocks = await processList(config.tickers, false, config, browser, logger);
+	logger(`👍️ All tickers of Stocks have been processed!`);
+	
+	const HTMLETFs = await processList(config.tickersETFs, true, config, browser, logger);
+	logger(`👍️ All tickers of ETFs have been processed!`);
+	
+	const HTMLMarkets = await getMarketsHTML(browser, config, logger);
+	logger(`👍️ All the Market-indicator charts have been processed!`);
+	
+	copyAssets(logger, config);
+	createFinalHTMLPage(HTMLStocks, HTMLETFs, HTMLMarkets);
+	
+}
+
+async function processList( list, isETF, config, browser, logger ){
+	
+	if ( !list.length ) {
+		return "";
+	}
+	
+	logger(`🤖 Processing the ${isETF ? "ETFs" : "Stocks"}...`);
+	
+	const pool         = await createPagePool(config, browser, logger);
+	const poolPromises = [];
 	
 	let currentIndex  = 0;
 	let HTMLDataArray = [];
@@ -345,39 +390,61 @@ async function process( config, browser, logger ){
 	await prepareYahoo(pool[ 0 ]);
 	
 	for ( let [ index, worker ] of pool.entries() ) {
-		
-		pool_sentinel.push(processSingleTicker(worker, ++index));
-		
+		poolPromises.push(processSingleTicker(worker, ++index));
 	}
 	
-	return Promise.all(pool_sentinel).then(async function(){
-		return await finalize(HTMLDataArray, config, logger);
+	return Promise.all(poolPromises).then(() =>{
+		return HTMLDataArray.join('');
 	});
 	
 	function processSingleTicker( page, workerID ){
 		
+		const tickers = list;
+		const index   = currentIndex;
+		let attempt   = 1;
+		currentIndex++;
+		
 		return new Promise(async function( resolve, reject ){
 			
-			const tickers = config.tickers;
-			const index   = currentIndex;
-			currentIndex++;
-			
 			if ( index >= tickers.length ) {
-				page.close();
 				logger(`🤖 [worker#${workerID}]: no tickers left, unloading!`);
+				page.close();
 				return resolve();
 			}
 			
 			const ticker = tickers[ index ];
-			
 			logger(`🤖 [worker#${workerID}]: processing ticker "${ticker[ 0 ]}"...`);
-			
-			let data = await gatherCharts(page, ticker[ 0 ], config, logger);
-			data     = await gatherData(data, page, ticker[ 1 ], config, logger).catch(err => logger(`🔥 An error occurred on Ticker "${ticker[ 1 ]}": ` + err));
-			
-			HTMLDataArray[ index ] = await convertToHTMLOutput(page, data, config);
+			await process();
 			
 			return resolve(processSingleTicker(page, workerID));
+			
+			async function process(){
+				
+				await new Promise(async ( resolve, reject ) =>{
+					
+					let data = await gatherCharts(page, ticker[ 0 ], config);
+					
+					if ( !isETF ) { //ETFs have no enough data.
+						data = await gatherData(data, page, ticker[ 1 ]);
+					}
+					
+					HTMLDataArray[ index ] = await convertToHTMLOutput(page, data, config, isETF);
+					resolve();
+					
+				}).catch(async err =>{
+					
+					logger(`🔥 An error occurred on Ticker "${ticker[ 0 ]}". ` + err);
+					logger(`🤖 [worker#${workerID}]: retrying to process ticker "${ticker[ 0 ]}" (attempt ${++attempt} of ${config.max_retry})...`);
+					
+					if ( attempt <= config.max_retry ) {
+						await process();
+					} else {
+						logger(`🤖 [worker#${workerID}]: not able to process ticker "${ticker[ 0 ]}".`);
+					}
+					
+				});
+				
+			}
 			
 		});
 		
@@ -385,9 +452,13 @@ async function process( config, browser, logger ){
 	
 }
 
+//
+//MAIN
+//
 async function execute( config, logger ){
 	
 	logger('⚡️ Starting...');
+	config.assets_dir = config.save_to_dir + config.assets_dir_name + '/';
 	
 	const browser = await puppeteer.launch({
 		args    : [ '--lang=en-GB' ],
@@ -397,7 +468,7 @@ async function execute( config, logger ){
 	await process(config, browser, logger).then(() =>{
 		logger('🌈 Task completed!');
 	}).catch(( err ) =>{
-		logger('🔥 An error occurred: ' + err);
+		logger('🔥 An error occurred. ' + err);
 		deleteOldFiles(config, logger);
 	});
 	
