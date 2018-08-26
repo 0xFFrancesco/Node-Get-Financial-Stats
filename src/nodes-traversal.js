@@ -76,14 +76,6 @@ async function exposeGetters( page ){
 			DOM_CHART_NODE      : () => $('[data-async-type="finance_wholepage_chart"]')[ 0 ],
 			
 			
-			//FRED CHARTS
-			SPREAD_10Y_2Y : () => document.querySelector('.highcharts-container'),
-			UNEMPLOYMENT  : () => document.querySelector('.highcharts-container'),
-			
-			
-			//YIELD CURVE CHARTS
-			YIELD_CURVE_CHART: () => document.querySelector('chart'),
-			
 		};
 		
 	});

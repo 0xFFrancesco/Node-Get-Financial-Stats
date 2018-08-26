@@ -32,12 +32,18 @@ h3 {
 	margin: 0 auto;
 }
 
+.mid-title {
+	padding: 15px;
+	max-width: 1024px;
+	margin: 60px auto 30px;
+	font-size: 32px;
+}
+
 .grid-container {
 	display: grid;
 	grid-gap: 15px;
 	padding: 0 15px 15px;
 	grid-template-columns: repeat(auto-fit, minmax(800px, 1fr));
-	margin-top: 60px;
 }
 
 .ticker {
@@ -64,10 +70,30 @@ h3 {
 .ticker-name {
 	font-weight: 700;
 	color: white;
-	background: #333333;
+	background: #0E0E0E;
+	background: -moz-linear-gradient(-45deg, #0E0E0E 0%, #7D7E7D 100%);
+	background: -webkit-linear-gradient(-45deg, #0E0E0E 0%, #7D7E7D 100%);
+	background: linear-gradient(135deg, #0E0E0E 0%, #7D7E7D 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#0e0e0e', endColorstr='#7d7e7d', GradientType=1);
 	border-radius: 3px;
-	padding: 5px 10px;
+	padding: 10px 15px;
 	letter-spacing: 3px;
+}
+
+.ticker-name.mod-etf {
+	background: #002400;
+	background: -moz-linear-gradient(-45deg, #002400 0%, #005700 17%, #008A00 33%, #52B152 67%, #83C783 83%, #B4DDB4 100%);
+	background: -webkit-linear-gradient(-45deg, #002400 0%, #005700 17%, #008A00 33%, #52B152 67%, #83C783 83%, #B4DDB4 100%);
+	background: linear-gradient(135deg, #002400 0%, #005700 17%, #008A00 33%, #52B152 67%, #83C783 83%, #B4DDB4 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#002400', endColorstr='#b4ddb4', GradientType=1);
+}
+
+.ticker-name.mod-market {
+	background: #E0BDB8;
+	background: -moz-linear-gradient(-45deg, #E0BDB8 1%, #C48D81 17%, #B74545 33%, #870000 67%, #592F00 83%, #281300 100%);
+	background: -webkit-linear-gradient(-45deg, #E0BDB8 1%, #C48D81 17%, #B74545 33%, #870000 67%, #592F00 83%, #281300 100%);
+	background: linear-gradient(135deg, #E0BDB8 1%, #C48D81 17%, #B74545 33%, #870000 67%, #592F00 83%, #281300 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#e0bdb8', endColorstr='#281300', GradientType=1);
 }
 
 .ticker-badge {
@@ -154,13 +180,37 @@ h3 {
 	width: calc(33.333% - 10px);
 }
 
-.ticker-info-part-diff{
+.ticker-info-part-diff {
 	color: #A6A6A6;
 }
 
-.ticker-info-part-with-diff{
+.ticker-info-part-with-diff {
 	display: inline-block;
 	width: 75px;
+}
+
+.markets{
+	padding: 0 15px 100px;
+	display: grid;
+	grid-gap: 15px;
+	grid-template-areas: "a a b b" "c d e f" ;
+}
+
+.markets .ticker{
+	max-width: none;
+}
+
+.markets .ticker img{
+	display: block;
+	margin: 0 auto;
+}
+
+.markets :nth-child(1){
+	grid-area: a;
+}
+
+.markets :nth-child(2){
+	grid-area: b;
 }
 
 /*

@@ -321,55 +321,85 @@ async function changeCountryOfYieldCurveChart( page, name ){
 	
 }
 
-async function getElementFromGetter( page, getter ){
+async function maximiseFREDChart( page ){
 	
-	return await page.evaluate(getter =>{
-		return getters[ getter ]();
-	}, getter);
+	await page.evaluate(() =>{
+		$('#zoom-all').click();
+	});
+	await page.waitFor(250);
 	
 }
 
 async function getMarketsHTML( browser, config, logger ){
 	
-	logger(`🤖 Processing the General Market Indicators...`);
+	logger(`➡️  Processing the General Market Indicators...`);
 	
 	const page = await browser.newPage();
+	return await getData();
 	
-	await goto(page, FRED_ENDPOINT + 'T10Y2Y');
-	await saveSingleImage(await getElementFromGetter(page, "SPREAD_10Y_2Y"), "T10Y2Y", config, logger);
-	
-	await goto(page, FRED_ENDPOINT + 'UNRATE');
-	await saveSingleImage(await getElementFromGetter(page, "UNEMPLOYMENT"), "T10Y2Y", config, logger);
-	
-	await goto(page, YIELD_CURVE_ENDPOINT);
-	[ "United States", "Euro", "China", "India" ].forEach(async country =>{
+	async function getData(){
 		
-		await changeCountryOfYieldCurveChart(page, country);
-		await removeUnusedDataFromBondYieldCurveChart(page);
-		await saveSingleImage(await getElementFromGetter(page, "YIELD_CURVE_CHART"), "YC-" + country.replace(" ", "-"), config, logger);
+		let attempt = 1;
 		
-	});
-	
-	return fs.readFileSync('./templates/markets.html', 'utf8');
+		return new Promise(async ( resolve, reject ) =>{
+			
+			await goto(page, FRED_ENDPOINT + 'T10Y2Y');
+			await page.waitFor(3000);
+			await maximiseFREDChart(page);
+			await saveSingleImage(await page.$('.highcharts-container'), "T10Y2Y", config, logger);
+			
+			await goto(page, FRED_ENDPOINT + 'UNRATE');
+			await page.waitFor(3000);
+			await maximiseFREDChart(page);
+			await saveSingleImage(await page.$('.highcharts-container'), "UNRATE", config, logger);
+			
+			await goto(page, YIELD_CURVE_ENDPOINT);
+			await page.waitFor(3000);
+			for ( let country of [ "Japan", "United States", "Euro", "China", "India" ] ) {
+				await changeCountryOfYieldCurveChart(page, country);
+				await removeUnusedDataFromBondYieldCurveChart(page);
+				page.waitFor(1500);
+				await saveSingleImage(await page.$('.highcharts-container'), "YC-" + country.replace(" ", "-"), config, logger);
+			}
+			
+			let HTML = fs.readFileSync('./templates/markets.html', 'utf8');
+			HTML     = HTML.replace(/{{{assets_dir}}}/g, config.assets_dir_name);
+			resolve(HTML);
+			
+		}).catch(async err =>{
+			
+			logger(`🔥 An error occurred while gathering the Markets overview. ` + err);
+			logger(`🤖 Retrying to process the data (attempt ${++attempt} of ${config.max_retry})...`);
+			
+			if ( attempt <= config.max_retry ) {
+				return await getData();
+			} else {
+				logger(`🤖 Not able to get the Market overview data.`);
+				return "";
+			}
+			
+		});
+		
+	}
 	
 }
 
 async function process( config, browser, logger ){
 	
 	deleteOldFiles(config, logger);
-	createAssetsDirectory();
+	createAssetsDirectory(config);
 	
 	const HTMLStocks = await processList(config.tickers, false, config, browser, logger);
-	logger(`👍️ All tickers of Stocks have been processed!`);
+	logger(`👍️ All Stocks have been processed!`);
 	
 	const HTMLETFs = await processList(config.tickersETFs, true, config, browser, logger);
-	logger(`👍️ All tickers of ETFs have been processed!`);
+	logger(`👍️ All ETFs have been processed!`);
 	
 	const HTMLMarkets = await getMarketsHTML(browser, config, logger);
 	logger(`👍️ All the Market-indicator charts have been processed!`);
 	
 	copyAssets(logger, config);
-	createFinalHTMLPage(HTMLStocks, HTMLETFs, HTMLMarkets);
+	createFinalHTMLPage(HTMLStocks, HTMLETFs, HTMLMarkets, config, logger);
 	
 }
 
@@ -379,7 +409,7 @@ async function processList( list, isETF, config, browser, logger ){
 		return "";
 	}
 	
-	logger(`🤖 Processing the ${isETF ? "ETFs" : "Stocks"}...`);
+	logger(`➡️  Processing the ${isETF ? "ETFs" : "Stocks"}...`);
 	
 	const pool         = await createPagePool(config, browser, logger);
 	const poolPromises = [];
@@ -387,7 +417,9 @@ async function processList( list, isETF, config, browser, logger ){
 	let currentIndex  = 0;
 	let HTMLDataArray = [];
 	
-	await prepareYahoo(pool[ 0 ]);
+	if ( !isETF ) {
+		await prepareYahoo(pool[ 0 ]);
+	}
 	
 	for ( let [ index, worker ] of pool.entries() ) {
 		poolPromises.push(processSingleTicker(worker, ++index));
@@ -426,6 +458,8 @@ async function processList( list, isETF, config, browser, logger ){
 					
 					if ( !isETF ) { //ETFs have no enough data.
 						data = await gatherData(data, page, ticker[ 1 ]);
+					} else {
+						data.name = ticker[ 1 ];
 					}
 					
 					HTMLDataArray[ index ] = await convertToHTMLOutput(page, data, config, isETF);
@@ -461,8 +495,9 @@ async function execute( config, logger ){
 	config.assets_dir = config.save_to_dir + config.assets_dir_name + '/';
 	
 	const browser = await puppeteer.launch({
-		args    : [ '--lang=en-GB' ],
-		timeout : 0, //headless : false
+		args     : [ '--lang=en-GB' ],
+		timeout  : 0,
+		//headless : false
 	});
 	
 	await process(config, browser, logger).then(() =>{

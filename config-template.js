@@ -5,7 +5,7 @@ module.exports = {
 	//
 	save_to_dir : 'INSERT HERE THE PATH TO SAVE THE GENERATED DATA',
 	tickers     : [ [ 'APPL', 'APPL' ], [ 'GOOG', 'GOOG' ], [ 'JNJ', 'JNJ' ], /* ['TICKER4_Google', 'TICKER4_Yahoo'], ... */ ],
-	tickersETFs     : [ /* same format as tickers */ ],
+	tickersETFs     : [ /*['Google Finance Ticker', 'Title to Display']*/ ],
 	
 	//
 	//OPTIONAL
