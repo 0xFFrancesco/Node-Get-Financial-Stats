@@ -55,6 +55,8 @@ The software is dependent on you internet connection speed. Please adjust the re
 
 **19/8/18 Update: I switched the data gathering to Yahoo Finance as it has much more useful data. The charts are still taken from Google Finance as they are SVGs (and prettier). Unfortunately now we have to provide two tickers, one working in Google Finance, and another working in Yahoo Finance, as they might differ. The strategy FN has been changed, now it gets provided with the generated HTML ticker and the ticker data object itself, so you can create a full fledged function with all your custom requirements/logic.**
 
+**26/8/18 Update: I added the possibility to scan ETFs showing only the charts (as they have not much info reported). There is a retry strategy in case of ticker processing failure. Moreover I added some General Market indicators.**
+
 It automatically reads the data from the Google Finance and the Yahoo Finance websites using [NodeJS](https://nodejs.org/en/) and [Puppeteer](https://github.com/GoogleChrome/puppeteer), capturing ~~screenshots~~ SVG-charts and data of a user-defined list of financial instruments.
 
 Then combines those information to create an easy digestible HTML file which at a quick glance sums up all the data.
