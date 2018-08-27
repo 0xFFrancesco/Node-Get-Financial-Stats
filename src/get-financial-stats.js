@@ -38,41 +38,52 @@ function createAssetsDirectory( config ){
 
 async function changeTimeRange( page, timeRange, config ){
 	
-	await page.evaluate(( timeRange ) =>{
+	try {
 		
-		const button = getters.GET_TIMERANGE_BTN(timeRange);
-		button.click();
+		await page.evaluate(( timeRange ) =>{
+			
+			const button = getters.GET_TIMERANGE_BTN(timeRange);
+			button.click();
+			
+		}, timeRange);
 		
-	}, timeRange);
-	
-	await page.waitFor(config.ajaxChartWaitTime);
+		await page.waitFor(config.ajaxChartWaitTime);
+		
+	} catch ( e ) {
+		throw e;
+	}
 	
 }
 
 async function gatherCharts( page, ticker, config ){
 	
-	await goto(page, GF_ENDPOINT);
-	
-	await navigateToTicker(page, ticker, 'GF');
-	
-	let elementData   = {};
-	let chartsHTMLTmp = '';
-	
-	elementData.chartsHTML = '';
-	
-	for ( let timeRange of TIMERANGES ) {
+	try {
 		
-		await changeTimeRange(page, timeRange, config);
+		await goto(page, GF_ENDPOINT);
+		await navigateToTicker(page, ticker, 'GF');
 		
-		chartsHTMLTmp = await page.evaluate(() =>{
-			return getters.SVG_DOM_CHART_CLONE();
-		});
+		let elementData   = {};
+		let chartsHTMLTmp = '';
 		
-		elementData.chartsHTML += createChartHTML(timeRange, chartsHTMLTmp);
+		elementData.chartsHTML = '';
 		
+		for ( let timeRange of TIMERANGES ) {
+			
+			await changeTimeRange(page, timeRange, config);
+			
+			chartsHTMLTmp = await page.evaluate(() =>{
+				return getters.SVG_DOM_CHART_CLONE();
+			});
+			
+			elementData.chartsHTML += createChartHTML(timeRange, chartsHTMLTmp);
+			
+		}
+		
+		return elementData;
+		
+	} catch ( e ) {
+		throw e;
 	}
-	
-	return elementData;
 	
 }
 
@@ -86,51 +97,57 @@ function createChartHTML( timeRange, chartHTML ){
 
 async function gatherData( elementData, page, ticker ){
 	
-	await goto(page, YF_ENDPOINT);
-	await navigateToTicker(page, ticker, 'YF');
-	await navigateToStatistics(page);
-	
-	elementData.ticker = ticker;
-	
-	elementData = await page.evaluate(( elementData ) =>{
+	try {
 		
-		elementData.name     = getters.NAME();
-		elementData.currency = getters.CURRENCY();
+		await goto(page, YF_ENDPOINT);
+		await navigateToTicker(page, ticker, 'YF');
+		await navigateToStatistics(page);
 		
-		elementData.price        = getters.PRICE();
-		elementData.eps          = getters.EPS();
-		elementData.tr_p_e       = getters.TR_PE();
-		//elementData.fw_p_e        = getters.FW_PE();
-		elementData.book_ps      = getters.BOOK_PS();
-		elementData.p_book       = getters.P_BOOK();
-		elementData.div_yield    = getters.DIV_YIELD();
-		elementData.payout_ratio = getters.PAYOUT_RATIO();
+		elementData.ticker = ticker;
 		
-		elementData.revenue     = getters.REVENUE();
-		elementData.g_profit    = getters.G_PROFIT();
-		elementData.net_income  = getters.NET_INCOME();
-		elementData.prof_margin = getters.PROF_MARGIN();
-		elementData.debt        = getters.DEBT();
-		elementData.debt_equity = getters.DEBT_EQUITY();
-		elementData.curr_ratio  = getters.CURR_RATIO();
+		elementData = await page.evaluate(( elementData ) =>{
+			
+			elementData.name     = getters.NAME();
+			elementData.currency = getters.CURRENCY();
+			
+			elementData.price        = getters.PRICE();
+			elementData.eps          = getters.EPS();
+			elementData.tr_p_e       = getters.TR_PE();
+			//elementData.fw_p_e        = getters.FW_PE();
+			elementData.book_ps      = getters.BOOK_PS();
+			elementData.p_book       = getters.P_BOOK();
+			elementData.div_yield    = getters.DIV_YIELD();
+			elementData.payout_ratio = getters.PAYOUT_RATIO();
+			
+			elementData.revenue     = getters.REVENUE();
+			elementData.g_profit    = getters.G_PROFIT();
+			elementData.net_income  = getters.NET_INCOME();
+			elementData.prof_margin = getters.PROF_MARGIN();
+			elementData.debt        = getters.DEBT();
+			elementData.debt_equity = getters.DEBT_EQUITY();
+			elementData.curr_ratio  = getters.CURR_RATIO();
+			
+			elementData.w52_h         = getters.W52_H();
+			elementData.w52_l         = getters.W52_L();
+			elementData.w52_c         = getters.W52_C();
+			elementData.avg_vol       = getters.AVG_VOL();
+			elementData.ret_on_equity = getters.RET_ON_EQUITY();
+			elementData.shorted       = getters.SHORTED();
+			elementData.cap           = getters.CAP();
+			//elementData.ret_on_assets = getters.RET_ON_ASSETS();
+			//elementData.short_ratio   = getters.SHORT_RATIO();
+			//elementData.beta          = getters.BETA();
+			
+			return elementData;
+			
+		}, elementData);
 		
-		elementData.w52_h         = getters.W52_H();
-		elementData.w52_l         = getters.W52_L();
-		elementData.w52_c         = getters.W52_C();
-		elementData.avg_vol       = getters.AVG_VOL();
-		elementData.ret_on_equity = getters.RET_ON_EQUITY();
-		elementData.shorted       = getters.SHORTED();
-		elementData.cap           = getters.CAP();
-		//elementData.ret_on_assets = getters.RET_ON_ASSETS();
-		//elementData.short_ratio   = getters.SHORT_RATIO();
-		//elementData.beta          = getters.BETA();
-		
+		await page.waitFor(500);
 		return elementData;
 		
-	}, elementData);
-	
-	await page.waitFor(500);
-	return elementData;
+	} catch ( e ) {
+		throw e;
+	}
 	
 }
 
@@ -224,48 +241,67 @@ function createFinalHTMLPage( HTMLStocks, HTMLETFs, HTMLMarkets, config, logger 
 
 async function navigateToStatistics( page ){
 	
-	const navigationPromise = waitForNavigation(page);
-	
-	await page.evaluate(() =>{
-		$('a:contains("Statistics")')[ 0 ].click();
-	});
-	await navigationPromise;
-	
-	await prepareTraversal(page);
-	await exposeGetters(page);
+	try {
+		
+		const navigationPromise = waitForNavigation(page);
+		
+		await page.evaluate(() =>{
+			$('a:contains("Statistics")')[ 0 ].click();
+		});
+		await navigationPromise;
+		
+		await prepareTraversal(page);
+		await exposeGetters(page);
+		
+	} catch ( e ) {
+		throw e;
+	}
 	
 }
 
 async function prepareYahoo( page ){
 	
-	await goto(page, YF_ENDPOINT);
-	
-	const navigationPromise = waitForNavigation(page);
-	await page.evaluate(() =>{
-		document.querySelector('input.btn').click();
-	});
-	await navigationPromise;
+	try {
+		
+		await goto(page, YF_ENDPOINT);
+		await page.waitFor(1000);
+		await page.evaluate(() =>{
+			document.querySelector('input.btn').click();
+		});
+		await page.waitFor(1000);
+		
+	} catch ( e ) {
+		throw e;
+	}
 	
 }
 
 async function navigateToTicker( page, ticker, mode ){
 	
-	await exposeGetters(page);
-	
-	const navigationPromise = waitForNavigation(page);
-	await page.evaluate(( ticker, mode ) =>{
+	try {
 		
-		const input = getters[ mode + '_GET_SEARCH_FIELD' ]();
-		const form  = getters[ mode + '_GET_SEARCH_FORM' ]();
+		await exposeGetters(page);
 		
-		input.value = ticker;
-		form.submit();
+		const navigationPromise = waitForNavigation(page);
+		await page.evaluate(( ticker, mode ) =>{
+			
+			const input = getters[ mode + '_GET_SEARCH_FIELD' ]();
+			const form  = getters[ mode + '_GET_SEARCH_FORM' ]();
+			
+			input.value = ticker;
+			form.submit();
+			
+		}, ticker, mode);
+		await navigationPromise;
 		
-	}, ticker, mode);
-	await navigationPromise;
-	
-	await prepareTraversal(page);
-	await exposeGetters(page);
+		await prepareTraversal(page);
+		await exposeGetters(page);
+		
+		await page.waitFor(500);
+		
+	} catch ( e ) {
+		throw e;
+	}
 	
 }
 
@@ -287,46 +323,76 @@ async function createPagePool( config, browser, logger ){
 
 async function goto( page, url ){
 	
-	await page.goto(url, {
-		waitUntil : 'load',
-		timeout   : 0
-	});
+	try {
+		
+		await page.goto(url, {
+			waitUntil : 'load',
+			timeout   : 0
+		});
+		
+	} catch ( e ) {
+		throw e;
+	}
 	
 }
 
 function waitForNavigation( page ){
 	
-	return page.waitForNavigation({
-		waitUntil : 'load',
-		timeout   : 0
-	});
+	try {
+		
+		return page.waitForNavigation({
+			waitUntil : 'load',
+			timeout   : 0
+		});
+		
+	} catch ( e ) {
+		throw e;
+	}
 	
 }
 
 async function removeUnusedDataFromBondYieldCurveChart( page ){
 	
-	await page.evaluate(() =>{
-		$('tspan:contains("1 Week")').click();
-		$('tspan:contains("1 Month")').click();
-	});
+	try {
+		
+		await page.evaluate(() =>{
+			$('tspan:contains("1 Week")').click();
+			$('tspan:contains("1 Month")').click();
+		});
+		
+	} catch ( e ) {
+		throw e;
+	}
 	
 }
 
 async function changeCountryOfYieldCurveChart( page, name ){
 	
-	await page.evaluate(name =>{
-		$('#countrySelect li:contains("' + name + '")').click();
-	}, name);
-	await page.waitFor(2000);
+	try {
+		
+		await page.evaluate(name =>{
+			$('#countrySelect li:contains("' + name + '")').click();
+		}, name);
+		await page.waitFor(2000);
+		
+	} catch ( e ) {
+		throw e;
+	}
 	
 }
 
 async function maximiseFREDChart( page ){
 	
-	await page.evaluate(() =>{
-		$('#zoom-all').click();
-	});
-	await page.waitFor(250);
+	try {
+		
+		await page.evaluate(() =>{
+			$('#zoom-all').click();
+		});
+		await page.waitFor(250);
+		
+	} catch ( e ) {
+		throw e;
+	}
 	
 }
 
@@ -343,35 +409,41 @@ async function getMarketsHTML( browser, config, logger ){
 		
 		return new Promise(async ( resolve, reject ) =>{
 			
-			await goto(page, FRED_ENDPOINT + 'T10Y2Y');
-			await page.waitFor(3000);
-			await maximiseFREDChart(page);
-			await saveSingleImage(await page.$('.highcharts-container'), "T10Y2Y", config, logger);
-			
-			await goto(page, FRED_ENDPOINT + 'UNRATE');
-			await page.waitFor(3000);
-			await maximiseFREDChart(page);
-			await saveSingleImage(await page.$('.highcharts-container'), "UNRATE", config, logger);
-			
-			await goto(page, YIELD_CURVE_ENDPOINT);
-			await page.waitFor(3000);
-			for ( let country of [ "Japan", "United States", "Euro", "China", "India" ] ) {
-				await changeCountryOfYieldCurveChart(page, country);
-				await removeUnusedDataFromBondYieldCurveChart(page);
-				page.waitFor(1500);
-				await saveSingleImage(await page.$('.highcharts-container'), "YC-" + country.replace(" ", "-"), config, logger);
+			try {
+				
+				for ( let type of [ "T10Y2Y", "UNRATE" ] ) {
+					
+					await goto(page, FRED_ENDPOINT + type);
+					await page.waitFor(3000);
+					await maximiseFREDChart(page);
+					await saveSingleImage(await page.$('.highcharts-container'), type, config, logger);
+					
+				}
+				
+				await goto(page, YIELD_CURVE_ENDPOINT);
+				await page.waitFor(3000);
+				
+				for ( let country of [ "Japan", "United States", "Euro", "China", "India" ] ) {
+					await changeCountryOfYieldCurveChart(page, country);
+					await removeUnusedDataFromBondYieldCurveChart(page);
+					page.waitFor(1500);
+					await saveSingleImage(await page.$('.highcharts-container'), "YC-" + country.replace(" ", "-"), config, logger);
+				}
+				
+				let HTML = fs.readFileSync('./templates/markets.html', 'utf8');
+				HTML     = HTML.replace(/{{{assets_dir}}}/g, config.assets_dir_name);
+				resolve(HTML);
+				
+			} catch ( e ) {
+				reject(e);
 			}
-			
-			let HTML = fs.readFileSync('./templates/markets.html', 'utf8');
-			HTML     = HTML.replace(/{{{assets_dir}}}/g, config.assets_dir_name);
-			resolve(HTML);
 			
 		}).catch(async err =>{
 			
 			logger(`🔥 An error occurred while gathering the Markets overview. ` + err);
-			logger(`🤖 Retrying to process the data (attempt ${++attempt} of ${config.max_retry})...`);
 			
-			if ( attempt <= config.max_retry ) {
+			if ( attempt < config.max_retry ) {
+				logger(`🤖 Retrying to process the data (attempt ${++attempt} of ${config.max_retry})...`);
 				return await getData();
 			} else {
 				logger(`🤖 Not able to get the Market overview data.`);
@@ -418,7 +490,12 @@ async function processList( list, isETF, config, browser, logger ){
 	let HTMLDataArray = [];
 	
 	if ( !isETF ) {
-		await prepareYahoo(pool[ 0 ]);
+		try {
+			logger(`🤖 Preparing Yahoo Finance...`);
+			await prepareYahoo(pool[ 0 ]);
+		} catch ( e ) {
+			throw e;
+		}
 	}
 	
 	for ( let [ index, worker ] of pool.entries() ) {
@@ -454,23 +531,29 @@ async function processList( list, isETF, config, browser, logger ){
 				
 				await new Promise(async ( resolve, reject ) =>{
 					
-					let data = await gatherCharts(page, ticker[ 0 ], config);
-					
-					if ( !isETF ) { //ETFs have no enough data.
-						data = await gatherData(data, page, ticker[ 1 ]);
-					} else {
-						data.name = ticker[ 1 ];
+					try {
+						
+						let data = await gatherCharts(page, ticker[ 0 ], config);
+						
+						if ( !isETF ) { //ETFs have no enough data.
+							data = await gatherData(data, page, ticker[ 1 ]);
+						} else {
+							data.name = ticker[ 1 ];
+						}
+						
+						HTMLDataArray[ index ] = await convertToHTMLOutput(page, data, config, isETF);
+						resolve();
+						
+					} catch ( e ) {
+						reject(e);
 					}
-					
-					HTMLDataArray[ index ] = await convertToHTMLOutput(page, data, config, isETF);
-					resolve();
 					
 				}).catch(async err =>{
 					
 					logger(`🔥 An error occurred on Ticker "${ticker[ 0 ]}". ` + err);
-					logger(`🤖 [worker#${workerID}]: retrying to process ticker "${ticker[ 0 ]}" (attempt ${++attempt} of ${config.max_retry})...`);
 					
-					if ( attempt <= config.max_retry ) {
+					if ( attempt < config.max_retry ) {
+						logger(`🤖 [worker#${workerID}]: retrying to process ticker "${ticker[ 0 ]}" (attempt ${++attempt} of ${config.max_retry})...`);
 						await process();
 					} else {
 						logger(`🤖 [worker#${workerID}]: not able to process ticker "${ticker[ 0 ]}".`);
@@ -495,9 +578,8 @@ async function execute( config, logger ){
 	config.assets_dir = config.save_to_dir + config.assets_dir_name + '/';
 	
 	const browser = await puppeteer.launch({
-		args     : [ '--lang=en-GB' ],
-		timeout  : 0,
-		//headless : false
+		args    : [ '--lang=en-GB' ],
+		timeout : 0, //headless : false
 	});
 	
 	await process(config, browser, logger).then(() =>{
