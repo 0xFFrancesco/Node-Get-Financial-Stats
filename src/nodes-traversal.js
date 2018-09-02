@@ -29,9 +29,10 @@ async function exposeGetters( page ){
 			
 			
 			//YAHOO FINANCE
-			YF_GET_SEARCH_FIELD : () => document.querySelector('#fin-srch-assist input'),
-			YF_GET_SEARCH_FORM  : () => document.querySelector('#uh-search form'),
-			CURRENCY            : () =>{
+			YF_GET_SEARCH_FIELD    : () => document.querySelector('#fin-srch-assist input'),
+			YF_GET_SEARCH_FORM     : () => document.querySelector('#uh-search form'),
+			YF_GET_SEARCH_FORM_BTN : () => document.querySelector('#search-button'),
+			CURRENCY               : () =>{
 				const currency = readInnerText($('#Main span:contains("Currency in")').first()).split(' ').slice(-1)[ 0 ];
 				return currency === "USD" ? "$" : (currency === "EUR" ? "€" : currency);
 			},

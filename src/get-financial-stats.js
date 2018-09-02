@@ -283,13 +283,19 @@ async function navigateToTicker( page, ticker, mode ){
 		await exposeGetters(page);
 		
 		const navigationPromise = waitForNavigation(page);
-		await page.evaluate(( ticker, mode ) =>{
+		await page.evaluate(async ( ticker, mode ) =>{
 			
 			const input = getters[ mode + '_GET_SEARCH_FIELD' ]();
-			const form  = getters[ mode + '_GET_SEARCH_FORM' ]();
-			
 			input.value = ticker;
-			form.submit();
+			
+			await new Promise(( res, rej ) => setTimeout(res, 1500));
+			
+			if ( mode === 'YF' ) {
+				getters[ mode + '_GET_SEARCH_FORM_BTN' ]().click();
+			} else {
+				getters[ mode + '_GET_SEARCH_FORM' ]().submit();
+			}
+			
 			
 		}, ticker, mode);
 		await navigationPromise;
@@ -542,6 +548,12 @@ async function processList( list, isETF, config, browser, logger ){
 						}
 						
 						HTMLDataArray[ index ] = await convertToHTMLOutput(page, data, config, isETF);
+						
+						//Random waiting to simulate human
+						let time = Math.floor(Math.random() * Math.floor(15)) * 1000;
+						logger(`🤖 [worker#${workerID}]: sleeping ${time / 1000}s...`);
+						await new Promise(( res, rej ) => setTimeout(res, time));
+						
 						resolve();
 						
 					} catch ( e ) {
@@ -578,8 +590,9 @@ async function execute( config, logger ){
 	config.assets_dir = config.save_to_dir + config.assets_dir_name + '/';
 	
 	const browser = await puppeteer.launch({
-		args    : [ '--lang=en-GB' ],
-		timeout : 0, //headless : false
+		args     : [ '--lang=en-GB' ],
+		timeout  : 0,
+		//headless : false
 	});
 	
 	await process(config, browser, logger).then(() =>{
