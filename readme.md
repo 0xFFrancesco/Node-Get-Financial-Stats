@@ -22,10 +22,6 @@ Moreover Google Finance has not much financial data, so from the 19/8/18 update,
     - It will create the HTML page in the defined output directory;
 - Open the just created HTML page to consult your precious data. 🙌
 
-### [About the author.](https://frarizzi.science/about)
-
-### [Generated HTML demo page.](https://frarizzi.science/projects/nodejs-get-financial-statistics-demo)
-
 ### Requirements:
  - NodeJS 🦏
  - NPM 📦
